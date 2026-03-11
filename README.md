@@ -11,31 +11,19 @@ Each step produces traceable artifacts with quality gates, council review, and o
 ### From marketplace (recommended)
 
 ```bash
-# Add the marketplace
-/plugin marketplace add your-username/pew
+# Add the marketplace (one-time)
+/plugin marketplace add bebsworthy/phase-execution-workflow
 
 # Install the plugin
 /plugin install pew@pew-marketplace
 ```
 
-### From git subdirectory
-
-If pew lives inside a monorepo, consumers can reference it directly:
-
-```json
-{
-  "source": {
-    "source": "git-subdir",
-    "url": "https://github.com/your-username/your-repo.git",
-    "path": "skills/phase-execution-workflow"
-  }
-}
-```
-
 ### Local development
 
+Clone the repo and point Claude Code at it:
+
 ```bash
-claude --plugin-dir ./skills/phase-execution-workflow
+claude --plugin-dir /path/to/phase-execution-workflow
 ```
 
 ## Setup
