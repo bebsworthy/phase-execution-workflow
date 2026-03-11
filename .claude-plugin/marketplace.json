@@ -1,0 +1,25 @@
+{
+  "name": "pew-marketplace",
+  "owner": {
+    "name": "Boyd Stratton"
+  },
+  "metadata": {
+    "description": "Phase Execution Workflow (PEW) — precision delivery for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "pew",
+      "source": "./",
+      "description": "7-step delivery loop with YAML tracking, quality gates, council review, and sub-agents",
+      "version": "3.0.0",
+      "keywords": [
+        "workflow",
+        "phase",
+        "delivery",
+        "quality-gates",
+        "code-review"
+      ],
+      "category": "workflow"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "name": "pew",
+  "description": "Phase Execution Workflow — 7-step delivery loop (IDEAS → BRD → RESEARCH → SPEC → PLAN → BUILD → CHECK/CLOSE) with YAML tracking, quality gates, council review, and sub-agents.",
+  "version": "3.0.0",
+  "author": {
+    "name": "Boyd Stratton"
+  },
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "phase",
+    "delivery",
+    "quality-gates",
+    "code-review",
+    "council",
+    "traceability",
+    "brd",
+    "spec"
+  ],
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config"
+          }
+        ]
+      }
+    ]
+  }
+}
