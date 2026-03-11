@@ -53,7 +53,7 @@ Everything else has sensible defaults. See `pew.yaml.example` for the full confi
 | Component              | Description                                                                                                                                                                                                                     |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Skill** (`/pew:run`) | Main workflow engine — phase lifecycle, auto mode, command dispatch                                                                                                                                                             |
-| **15 agents**          | Feature benchmarker, UX researcher/designer, alignment checker, council experts (security, architecture, testing, test-quality, frontend, backend), tech developers (frontend, backend), product reviewer, traceability auditor |
+| **14 agents**          | Feature benchmarker, UX researcher/designer, alignment checker, council experts (security, architecture, testing, test-quality, frontend, backend), tech developers (frontend, backend), product reviewer |
 | **Review profiles**    | Composable tech best practices (fundamental, TypeScript, React, NestJS, TanStack, Tailwind, SPA, REST API, PostgreSQL) — auto-detected and injected                                                                             |
 | **Templates**          | Reference templates for IDEAS, BRD, RESEARCH, SPEC, PLAN artifacts                                                                                                                                                              |
 | **Helper script**      | `pw.sh` — phase tracker management (YAML-based), traceability verification, phase diff                                                                                                                                          |
@@ -76,6 +76,16 @@ pew supports two layers of quality knowledge:
 
 Both are injected into council experts (CHECK) and tech agents (BUILD).
 
+## Phase sizing
+
+Not every change needs the full 7-step loop. Use `--size` when adding phases:
+
+| Size | Steps | Use for |
+| --- | --- | --- |
+| `large` (default) | All 7 steps | Major features |
+| `medium` | Skips IDEAS | Known features, no market research needed |
+| `small` | Skips IDEAS + RESEARCH | Bug fixes, small scoped changes |
+
 ## Commands
 
 ```
@@ -92,3 +102,4 @@ Both are injected into council experts (CHECK) and tech agents (BUILD).
 
 - Claude Code 1.0.33+
 - Python 3.8+ (auto-creates venv for PyYAML on first run)
+- **Optional:** Chrome MCP or Playwright MCP server — required for browser-based product review (`config.product_review.enabled`). Without it, validation is skipped with a P2 advisory.

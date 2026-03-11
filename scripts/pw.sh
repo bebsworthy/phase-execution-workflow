@@ -6,6 +6,21 @@ LIB_DIR="$SCRIPT_DIR/lib"
 VENV_DIR="$LIB_DIR/.venv"
 VENV_PYTHON="$VENV_DIR/bin/python3"
 
+# For dump-config (fired by plugin hooks on every prompt), skip entirely
+# if no pew.yaml exists anywhere up the directory tree. This avoids
+# bootstrapping the Python venv and wasting context in non-PEW repos.
+if [ "${1:-}" = "dump-config" ]; then
+  dir="$PWD"
+  found=false
+  while [ "$dir" != "/" ]; do
+    [ -f "$dir/pew.yaml" ] && found=true && break
+    dir="$(dirname "$dir")"
+  done
+  if [ "$found" = "false" ]; then
+    exit 0
+  fi
+fi
+
 if [ ! -f "$VENV_PYTHON" ]; then
   echo "Setting up pw.py venv..." >&2
   python3 -m venv "$VENV_DIR"

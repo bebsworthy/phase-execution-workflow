@@ -48,6 +48,22 @@ Config fields used throughout this skill:
 - **Review profiles**: `${CLAUDE_PLUGIN_ROOT}/review-profiles/` — composable, generic tech best practices. Injected into council experts (CHECK) and tech agents (BUILD). Complement project-specific playbooks in `{config.paths.guidelines}/`.
 - **Phase naming**: convert title to kebab-case (e.g., "Phase 24 Advanced Search" → `phase-24-advanced-search`)
 
+### Phase Sizing
+
+Phases have a `size` field (`small | medium | large`, default: `large`) that controls which steps are mandatory:
+
+| Size | Steps Run | Steps Skipped | Use When |
+| --- | --- | --- | --- |
+| **large** | All 7 steps | None | Major features, new capabilities |
+| **medium** | BRD → RESEARCH → SPEC → PLAN → BUILD → CHECK | IDEAS | Well-understood features that don't need market research |
+| **small** | BRD → SPEC → PLAN → BUILD → CHECK | IDEAS, RESEARCH | Bug fixes, small changes, well-scoped tasks |
+
+Skipped steps are pre-set to `skipped` status when the phase is created via `pw.sh add-phase --size <size>`. The `analyze-phase` command respects skipped steps and resumes from the first non-skipped incomplete step.
+
+For **medium** phases, RESEARCH still runs but skips the feature-benchmarker (market research) and UX research/design sub-agents — focus on technical research only.
+
+For **small** phases, the BRD should be minimal: just FCs + acceptance criteria, no E2E test flows unless the phase is frontend-tagged.
+
 ---
 
 ## Step Definitions
@@ -215,7 +231,7 @@ If `config.conventions_file` is set and the file exists, read it before starting
      - Matched review profiles content (from step 5)
      - Conventions file path (if configured)
      - Reference doc path (if configured per expert in `config.council.experts`)
-  7. **COLLECT** JSON findings from each expert.
+  7. **COLLECT** JSON findings from each expert. After collecting each expert's response, verify it contains valid JSON with `expert` (string) and `findings` (array) fields. If an expert returns malformed output, log which expert failed and exclude their findings from the merge — do not retry or block the pipeline. Note the exclusion in COUNCIL-REVIEW.md's Dedup Notes section.
   8. **MERGE and DEDUPLICATE** (dedup key: file + line range):
      - Same file + same line range + same issue → keep the domain-specific expert's finding (higher priority), drop the generalist's
      - Same file + same line range + different angle → keep both, add `related_to` cross-reference between finding IDs
@@ -288,12 +304,12 @@ If `config.conventions_file` is set and the file exists, read it before starting
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh <command>
   set-step-status --phase N --step S --status S   # auto-inits phase, auto-closes on check complete
   analyze-phase --phase N [--json]
-  add-phase --number N --title T [--brief "..."] [--depends-on X,Y] [--tags a,b]
+  add-phase --number N --title T [--brief "..."] [--depends-on X,Y] [--tags a,b] [--size small|medium|large]
   list-phases [--status S] [--json]
   verify-traceability --phase N --from S --to S    # exit 1 if missing IDs found
   check-dependencies --phase N
   phase-diff --phase N                        # uses three-dot diff; assumes linear history from phase start
-  dump-config                                      # output resolved pew.yaml as JSON
+  dump-config [--scope agent|council|research]       # output resolved pew.yaml as JSON (scoped = subset)
   generate-verify-commands                         # output verify/e2e commands from config
 ```
 

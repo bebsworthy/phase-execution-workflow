@@ -717,3 +717,126 @@ class TestCustomPaths:
         assert code == 0
         result = json.loads(out)
         assert "workflow/phases" in result["phase_dir"]
+
+
+# ---------------------------------------------------------------------------
+# Phase sizing
+# ---------------------------------------------------------------------------
+
+class TestPhaseSizing:
+    def test_default_size_is_large(self, repo: Path):
+        _add_phase(repo)
+        data = pw.load_tracker(repo)
+        assert data["phases"][0]["size"] == "large"
+        # All steps should be not_started
+        for step in pw.STEP_ORDER:
+            assert data["phases"][0]["steps"][step] == "not_started"
+
+    def test_small_skips_ideas_and_research(self, repo: Path):
+        code, _ = _run(repo, "add-phase", "--number", "1", "--title", "Tiny Fix", "--size", "small")
+        assert code == 0
+        data = pw.load_tracker(repo)
+        phase = data["phases"][0]
+        assert phase["size"] == "small"
+        assert phase["steps"]["ideas"] == "skipped"
+        assert phase["steps"]["research"] == "skipped"
+        assert phase["steps"]["brd"] == "not_started"
+        assert phase["steps"]["spec"] == "not_started"
+        assert phase["steps"]["plan"] == "not_started"
+        assert phase["steps"]["build"] == "not_started"
+        assert phase["steps"]["check"] == "not_started"
+
+    def test_medium_skips_ideas_only(self, repo: Path):
+        code, _ = _run(repo, "add-phase", "--number", "1", "--title", "Medium Change", "--size", "medium")
+        assert code == 0
+        data = pw.load_tracker(repo)
+        phase = data["phases"][0]
+        assert phase["size"] == "medium"
+        assert phase["steps"]["ideas"] == "skipped"
+        assert phase["steps"]["research"] == "not_started"
+        assert phase["steps"]["brd"] == "not_started"
+
+    def test_large_skips_nothing(self, repo: Path):
+        code, _ = _run(repo, "add-phase", "--number", "1", "--title", "Big Feature", "--size", "large")
+        assert code == 0
+        data = pw.load_tracker(repo)
+        for step in pw.STEP_ORDER:
+            assert data["phases"][0]["steps"][step] == "not_started"
+
+    def test_small_phase_analyze_first_incomplete(self, repo: Path):
+        _run(repo, "add-phase", "--number", "1", "--title", "Tiny", "--size", "small")
+        code, out = _run(repo, "analyze-phase", "--phase", "1", "--json")
+        assert code == 0
+        result = json.loads(out)
+        assert result["size"] == "small"
+        # First incomplete should be brd (ideas and research are skipped)
+        assert result["first_incomplete_step"] == "brd"
+
+    def test_small_phase_step_ordering_respects_skipped(self, repo: Path):
+        """Starting brd should work on a small phase since ideas is pre-skipped."""
+        _run(repo, "add-phase", "--number", "1", "--title", "Tiny", "--size", "small")
+        code, _ = _run(repo, "set-step-status", "--phase", "1",
+                        "--step", "brd", "--status", "in_progress")
+        assert code == 0
+
+    def test_size_in_tracker_defaults(self, tmp_path: Path):
+        """Phases loaded from tracker without size field default to large."""
+        (tmp_path / "phases").mkdir(parents=True)
+        tracker = tmp_path / "phases/phase-tracker.yaml"
+        tracker.write_text(yaml.dump({"phases": [{"number": 1, "title": "Old", "status": "not_started"}]}))
+        data = pw.load_tracker(tmp_path)
+        assert data["phases"][0]["size"] == "large"
+
+
+# ---------------------------------------------------------------------------
+# Scoped config output
+# ---------------------------------------------------------------------------
+
+class TestScopedConfig:
+    def test_scope_agent(self, repo: Path):
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "project": {"name": "Test"},
+            "conventions_file": "docs/conventions.md",
+            "competitors": ["Rival"],
+            "council": {"enabled": False},
+        }))
+        code, out = _run(repo, "dump-config", "--scope", "agent")
+        assert code == 0
+        config = json.loads(out)
+        assert "project" in config
+        assert "paths" in config
+        assert "stack" in config
+        assert "conventions_file" in config
+        assert "competitors" not in config
+        assert "council" not in config
+
+    def test_scope_council(self, repo: Path):
+        code, out = _run(repo, "dump-config", "--scope", "council")
+        assert code == 0
+        config = json.loads(out)
+        assert "project" in config
+        assert "paths" in config
+        assert "council" in config
+        assert "conventions_file" in config
+        assert "stack" not in config
+        assert "competitors" not in config
+
+    def test_scope_research(self, repo: Path):
+        code, out = _run(repo, "dump-config", "--scope", "research")
+        assert code == 0
+        config = json.loads(out)
+        assert "project" in config
+        assert "paths" in config
+        assert "stack" in config
+        assert "competitors" in config
+        assert "council" not in config
+        assert "conventions_file" not in config
+
+    def test_no_scope_returns_full(self, repo: Path):
+        code, out = _run(repo, "dump-config")
+        assert code == 0
+        config = json.loads(out)
+        assert "project" in config
+        assert "council" in config
+        assert "competitors" in config
+        assert "stack" in config

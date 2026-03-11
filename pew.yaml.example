@@ -35,6 +35,12 @@ competitors: []
 # - Competitor A
 # - Competitor B
 
+# --- Phase Sizing ---
+# When adding phases with `pw.sh add-phase --size <size>`, controls which steps run:
+#   large  (default) — all 7 steps
+#   medium — skips IDEAS (no market research)
+#   small  — skips IDEAS + RESEARCH (minimal BRD → PLAN → BUILD → CHECK)
+
 # --- Conventions ---
 conventions_file: '' # path to a conventions/decisions doc (optional)
 

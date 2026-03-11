@@ -16,7 +16,15 @@ from pathlib import Path
 import yaml
 
 VALID_STEP_STATUSES = {"not_started", "in_progress", "complete", "skipped"}
+VALID_PHASE_SIZES = {"small", "medium", "large"}
 STEP_ORDER = ["ideas", "brd", "research", "spec", "plan", "build", "check"]
+
+# Steps to auto-skip by phase size.  large = no skips (default).
+SIZE_SKIP_STEPS: dict[str, set[str]] = {
+    "large": set(),
+    "medium": {"ideas"},
+    "small": {"ideas", "research"},
+}
 STEP_FILE = {
     "ideas": "IDEAS.md",
     "brd": "BRD.md",
@@ -140,6 +148,7 @@ def load_tracker(root: Path, config: dict | None = None) -> dict:
         phase.setdefault("summary", "")
         phase.setdefault("depends_on", [])
         phase.setdefault("tags", [])
+        phase.setdefault("size", "large")
         phase.setdefault("start_commit", None)
         phase.setdefault("end_commit", None)
         phase.setdefault("steps", {})
@@ -290,7 +299,13 @@ def cmd_analyze_phase(args: argparse.Namespace) -> int:
 
     for step in STEP_ORDER:
         tracker_status = phase["steps"].get(step, "not_started")
-        if step in STEP_FILE:
+        if tracker_status == "skipped":
+            step_analysis[step] = {
+                "tracker_status": "skipped",
+                "complete": True,
+                "reasons": [],
+            }
+        elif step in STEP_FILE:
             file_path = pdir / STEP_FILE[step]
             is_complete, reasons = detect_step_file_completion(file_path)
             step_analysis[step] = {
@@ -303,7 +318,7 @@ def cmd_analyze_phase(args: argparse.Namespace) -> int:
         else:
             step_analysis[step] = {
                 "tracker_status": tracker_status,
-                "complete": tracker_status in ("complete", "skipped"),
+                "complete": tracker_status == "complete",
                 "reasons": [],
             }
 
@@ -318,6 +333,7 @@ def cmd_analyze_phase(args: argparse.Namespace) -> int:
         "phase_title": phase["title"],
         "phase_dir": str(pdir),
         "tracker_status": phase["status"],
+        "size": phase.get("size", "large"),
         "steps": step_analysis,
         "first_incomplete_step": first_incomplete,
     }
@@ -362,6 +378,9 @@ def cmd_add_phase(args: argparse.Namespace) -> int:
     if args.tags:
         tags = [x.strip() for x in args.tags.split(",") if x.strip()]
 
+    size = args.size or "large"
+    skip_steps = SIZE_SKIP_STEPS.get(size, set())
+
     phase = {
         "number": args.number,
         "title": args.title,
@@ -370,9 +389,13 @@ def cmd_add_phase(args: argparse.Namespace) -> int:
         "summary": "",
         "depends_on": depends_on,
         "tags": tags,
+        "size": size,
         "start_commit": None,
         "end_commit": None,
-        "steps": {s: "not_started" for s in STEP_ORDER},
+        "steps": {
+            s: ("skipped" if s in skip_steps else "not_started")
+            for s in STEP_ORDER
+        },
     }
     data["phases"].append(phase)
     data["phases"].sort(key=lambda p: p["number"])
@@ -593,9 +616,19 @@ def cmd_phase_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+CONFIG_SCOPES: dict[str, list[str]] = {
+    "agent": ["project", "paths", "stack", "conventions_file"],
+    "council": ["project", "paths", "council", "conventions_file"],
+    "research": ["project", "paths", "stack", "competitors"],
+}
+
+
 def cmd_dump_config(args: argparse.Namespace) -> int:
     root = Path(args.repo_root).resolve() if args.repo_root else repo_root_from_script()
     config = load_config(root)
+    scope = getattr(args, "scope", None)
+    if scope and scope in CONFIG_SCOPES:
+        config = {k: config[k] for k in CONFIG_SCOPES[scope] if k in config}
     print(json.dumps(config, indent=2))
     return 0
 
@@ -631,6 +664,8 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("--brief", default=None, help="Phase brief: what this phase delivers and why.")
     add.add_argument("--depends-on", default=None, help="Comma-separated dependency phase numbers.")
     add.add_argument("--tags", default=None, help="Comma-separated tags (e.g., frontend,backend).")
+    add.add_argument("--size", default=None, choices=sorted(VALID_PHASE_SIZES),
+                     help="Phase size: small skips IDEAS+RESEARCH, medium skips IDEAS, large runs all steps (default: large).")
     add.set_defaults(func=cmd_add_phase)
 
     lp = sub.add_parser("list-phases", help="List phases from tracker.")
@@ -659,6 +694,8 @@ def build_parser() -> argparse.ArgumentParser:
     pd.set_defaults(func=cmd_phase_diff)
 
     dc = sub.add_parser("dump-config", help="Output resolved pew.yaml config as JSON.")
+    dc.add_argument("--scope", default=None, choices=sorted(CONFIG_SCOPES.keys()),
+                    help="Limit output to fields relevant to a specific role (agent, council, research).")
     dc.set_defaults(func=cmd_dump_config)
 
     gvc = sub.add_parser("generate-verify-commands", help="Output verify/e2e commands from config.")
