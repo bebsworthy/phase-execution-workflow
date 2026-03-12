@@ -68,10 +68,9 @@ Everything else has sensible defaults. See `pew.yaml.example` for the full confi
 ## How it works
 
 1. **pew.yaml** at your repo root defines project-specific settings (paths, stack, commands, competitors)
-2. The plugin hooks inject this config into every conversation and sub-agent
-3. `/pew:run` activates the workflow — it reads config, manages phase state, and orchestrates agents
-4. Agents receive project context + review profiles + playbooks automatically
-5. Quality gates (traceability, approval, council review) enforce precision at every step
+2. `/pew:run` activates the workflow — it reads config on-demand, manages phase state, and orchestrates agents
+3. Agents receive scoped project context + review profiles + playbooks automatically
+4. Quality gates (traceability, approval, council review) enforce precision at every step
 
 ## Project-specific playbooks
 
@@ -106,6 +105,6 @@ Not every change needs the full 7-step loop. Use `--size` when adding phases:
 
 ## Requirements
 
-- Claude Code 1.0.33+
+- Claude Code with plugin support
 - Python 3.8+ (auto-creates venv for PyYAML on first run)
 - **Optional:** Chrome MCP or Playwright MCP server — required for browser-based product review (`config.product_review.enabled`). Without it, validation is skipped with a P2 advisory.
