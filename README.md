@@ -28,9 +28,15 @@ claude --plugin-dir /path/to/phase-execution-workflow
 
 ## Setup
 
+1. Run `/pew:init` — it explores your repo, detects your tech stack and verification commands, and writes `pew.yaml` after your confirmation
+2. Run `/pew:run` and say `start phase 1`
+
+You can also run `/pew:init` again later to update the config if your project structure changes.
+
+### Manual setup (alternative)
+
 1. Copy `pew.yaml.example` to your repo root as `pew.yaml`
 2. Edit the config with your project's paths, stack, commands, and competitors
-3. Run `/pew:run` and say `start phase 1`
 
 ### Minimal config
 
@@ -52,12 +58,12 @@ Everything else has sensible defaults. See `pew.yaml.example` for the full confi
 
 | Component              | Description                                                                                                                                                                                                                     |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Skill** (`/pew:init`) | Project setup — explores repo, detects stack/commands, writes `pew.yaml`                                                                                                                                                     |
 | **Skill** (`/pew:run`) | Main workflow engine — phase lifecycle, auto mode, command dispatch                                                                                                                                                             |
 | **14 agents**          | Feature benchmarker, UX researcher/designer, alignment checker, council experts (security, architecture, testing, test-quality, frontend, backend), tech developers (frontend, backend), product reviewer |
 | **Review profiles**    | Composable tech best practices (fundamental, TypeScript, React, NestJS, TanStack, Tailwind, SPA, REST API, PostgreSQL) — auto-detected and injected                                                                             |
 | **Templates**          | Reference templates for IDEAS, BRD, RESEARCH, SPEC, PLAN artifacts                                                                                                                                                              |
-| **Helper script**      | `pw.sh` — phase tracker management (YAML-based), traceability verification, phase diff                                                                                                                                          |
-| **Hooks**              | Auto-injects config on every prompt and sub-agent spawn                                                                                                                                                                         |
+| **Helper script**      | `pw.sh` — phase tracker management (YAML-based), traceability verification, config validation, profile resolution                                                                                                                |
 
 ## How it works
 

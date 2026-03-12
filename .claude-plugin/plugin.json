@@ -16,29 +16,5 @@
     "traceability",
     "brd",
     "spec"
-  ],
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config"
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config"
-          }
-        ]
-      }
-    ]
-  }
+  ]
 }

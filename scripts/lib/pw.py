@@ -623,14 +623,329 @@ CONFIG_SCOPES: dict[str, list[str]] = {
 }
 
 
+def _strip_empty(obj: object) -> object:
+    """Recursively remove keys whose values are empty strings, empty lists, or empty dicts."""
+    if isinstance(obj, dict):
+        return {k: _strip_empty(v) for k, v in obj.items()
+                if v not in ("", [], {})}
+    if isinstance(obj, list):
+        return [_strip_empty(item) for item in obj]
+    return obj
+
+
 def cmd_dump_config(args: argparse.Namespace) -> int:
     root = Path(args.repo_root).resolve() if args.repo_root else repo_root_from_script()
     config = load_config(root)
     scope = getattr(args, "scope", None)
     if scope and scope in CONFIG_SCOPES:
         config = {k: config[k] for k in CONFIG_SCOPES[scope] if k in config}
-    print(json.dumps(config, indent=2))
+    config = _strip_empty(config)
+    print(json.dumps(config, separators=(",", ":")))
     return 0
+
+
+# ---------------------------------------------------------------------------
+# resolve-profiles: match review profiles against file list
+# ---------------------------------------------------------------------------
+
+def _parse_profile_frontmatter(path: Path) -> dict | None:
+    """Parse YAML frontmatter from a review profile markdown file."""
+    text = path.read_text(encoding="utf-8")
+    m = re.match(r"^---\s*\n(.*?\n)---\s*\n", text, re.DOTALL)
+    if not m:
+        return None
+    try:
+        meta = yaml.safe_load(m.group(1))
+    except yaml.YAMLError:
+        return None
+    if not isinstance(meta, dict):
+        return None
+    meta["_path"] = str(path)
+    meta["_content"] = text[m.end():]
+    meta["_raw"] = text
+    return meta
+
+
+def _match_profile(meta: dict, files: list[str]) -> bool:
+    """Check if a profile matches the given file list based on keywords and match rules."""
+    import fnmatch
+
+    # Match by file_patterns in matches section
+    matches = meta.get("matches", {})
+    if isinstance(matches, dict):
+        file_patterns = matches.get("file_patterns", [])
+        if file_patterns:
+            for f in files:
+                basename = Path(f).name
+                for pat in file_patterns:
+                    if fnmatch.fnmatch(basename, pat) or fnmatch.fnmatch(f, f"**/{pat}"):
+                        return True
+
+    # Match by keywords against file extensions and path segments
+    keywords = set(meta.get("keywords", []))
+    if not keywords:
+        return False
+
+    # Build a set of signals from the file list
+    signals: set[str] = set()
+    for f in files:
+        p = Path(f)
+        ext = p.suffix.lstrip(".")
+        if ext:
+            signals.add(ext)
+        for part in p.parts:
+            signals.add(part.lower())
+
+    # Extension-to-keyword mapping
+    ext_map = {
+        "ts": {"typescript", "ts"},
+        "tsx": {"typescript", "ts", "react", "tsx", "jsx", "component"},
+        "js": {"javascript", "js"},
+        "jsx": {"javascript", "js", "react", "jsx", "component"},
+        "sql": {"sql", "postgresql", "postgres"},
+        "css": {"css", "styling"},
+    }
+    for ext in signals.copy():
+        if ext in ext_map:
+            signals.update(ext_map[ext])
+
+    return bool(keywords & signals)
+
+
+def _resolve_extends(meta: dict, profiles_dir: Path, loaded: dict[str, dict]) -> list[dict]:
+    """Resolve profile extends chain, returning parents lowest-priority-first."""
+    extends = meta.get("extends", [])
+    if not extends:
+        return []
+    parents: list[dict] = []
+    for ext_path in extends:
+        full_path = (profiles_dir / ext_path).resolve()
+        key = str(full_path)
+        if key in loaded:
+            parents.append(loaded[key])
+            continue
+        if full_path.exists():
+            parent_meta = _parse_profile_frontmatter(full_path)
+            if parent_meta:
+                loaded[key] = parent_meta
+                grandparents = _resolve_extends(parent_meta, profiles_dir, loaded)
+                parents = grandparents + [parent_meta] + parents
+    return parents
+
+
+def _summarize_profile(meta: dict) -> str:
+    """Condensed summary: headers + first sentence of rules, no code blocks."""
+    content = meta["_content"]
+    # Strip code blocks
+    content = re.sub(r"```[\s\S]*?```", "", content)
+
+    lines = content.split("\n")
+    summary_lines: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            summary_lines.append(stripped)
+            continue
+        # Bold items (rules, anti-patterns)
+        bold_match = re.match(r"^([-*]\s+)?\*\*(.+?)\*\*[:\s.]*(.*)", stripped)
+        if bold_match:
+            prefix = bold_match.group(1) or ""
+            title = bold_match.group(2)
+            rest = bold_match.group(3).strip()
+            first_sentence = re.split(r"[.!?]", rest)[0].strip() if rest else ""
+            if first_sentence:
+                summary_lines.append(f"{prefix}**{title}** — {first_sentence}.")
+            else:
+                summary_lines.append(f"{prefix}**{title}**")
+            continue
+        # Checklist items
+        if re.match(r"^- \[[ x]\]", stripped):
+            summary_lines.append(stripped)
+
+    return "\n".join(summary_lines)
+
+
+def cmd_resolve_profiles(args: argparse.Namespace) -> int:
+    profiles_dir = Path(args.profiles_dir).resolve()
+    if not profiles_dir.is_dir():
+        print(f"Profiles directory not found: {profiles_dir}", file=sys.stderr)
+        return 1
+
+    files = [f.strip() for f in args.files.split(",") if f.strip()] if args.files else []
+
+    # Collect matching profiles (skip _-prefixed files unless pulled via extends)
+    all_profiles: list[dict] = []
+    for md_file in sorted(profiles_dir.rglob("*.md")):
+        if md_file.name.startswith("_"):
+            continue
+        meta = _parse_profile_frontmatter(md_file)
+        if meta and _match_profile(meta, files):
+            all_profiles.append(meta)
+
+    if not all_profiles:
+        if args.json:
+            print(json.dumps({"profiles": [], "output": ""}, indent=2))
+        else:
+            print("No matching profiles found.")
+        return 0
+
+    # Resolve extends chain and deduplicate
+    loaded: dict[str, dict] = {}
+    resolved: list[dict] = []
+    seen_paths: set[str] = set()
+
+    for meta in all_profiles:
+        parents = _resolve_extends(meta, profiles_dir, loaded)
+        for p in parents:
+            if p["_path"] not in seen_paths:
+                seen_paths.add(p["_path"])
+                resolved.append(p)
+        if meta["_path"] not in seen_paths:
+            seen_paths.add(meta["_path"])
+            resolved.append(meta)
+
+    # Sort by priority (lowest first)
+    resolved.sort(key=lambda m: m.get("priority", 99))
+
+    profile_names = [m.get("name", "unknown") for m in resolved]
+
+    if args.json:
+        result = {
+            "profiles": [
+                {"name": m.get("name"), "priority": m.get("priority", 99), "path": m["_path"]}
+                for m in resolved
+            ],
+        }
+        print(json.dumps(result, indent=2))
+        return 0
+
+    # Output: full or summary
+    output_parts: list[str] = []
+    for meta in resolved:
+        name = meta.get("name", "unknown")
+        priority = meta.get("priority", 99)
+
+        if args.summary:
+            header = f"## {name} (priority {priority}) — {meta['_path']}"
+            summary = _summarize_profile(meta)
+            output_parts.append(f"{header}\n{summary}")
+        else:
+            output_parts.append(meta["_raw"])
+
+    chain = " → ".join(profile_names)
+    print(f"Applying: {chain} — {len(resolved)} profiles", file=sys.stderr)
+    print("\n\n---\n\n".join(output_parts))
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# extract-ids: compact FC/T index from BRD + SPEC
+# ---------------------------------------------------------------------------
+
+def cmd_extract_ids(args: argparse.Namespace) -> int:
+    root = Path(args.repo_root).resolve() if args.repo_root else repo_root_from_script()
+    config = load_config(root)
+    data = load_tracker(root, config)
+    phase = find_phase(data, args.phase)
+    if phase is None:
+        print(f"Phase {args.phase} not found in tracker.")
+        return 1
+
+    pdir = phase_dir(root, phase, config)
+    brd_file = pdir / "BRD.md"
+    spec_file = pdir / "SPEC.md"
+
+    result: dict = {
+        "brd_file": str(brd_file),
+        "spec_file": str(spec_file),
+        "capabilities": [],
+        "tests": [],
+    }
+
+    # Extract FC-nnn from BRD
+    if brd_file.exists():
+        brd_lines = brd_file.read_text(encoding="utf-8").splitlines()
+        seen_fc: set[str] = set()
+        for i, line in enumerate(brd_lines, 1):
+            for m in re.finditer(r"(FC-\d+)", line):
+                fc_id = m.group(1)
+                if fc_id in seen_fc:
+                    continue
+                seen_fc.add(fc_id)
+                after_id = line[m.end():].strip().lstrip("|").strip()
+                summary = re.sub(r"\|.*", "", after_id).strip() if after_id else ""
+                if not summary:
+                    summary = line.strip()
+                result["capabilities"].append({
+                    "id": fc_id,
+                    "line": i,
+                    "summary": summary[:120],
+                })
+
+    # Extract T-nnn from SPEC
+    if spec_file.exists():
+        spec_lines = spec_file.read_text(encoding="utf-8").splitlines()
+        seen_t: set[str] = set()
+        for i, line in enumerate(spec_lines, 1):
+            for m in re.finditer(r"(T-\d+)", line):
+                t_id = m.group(1)
+                if t_id in seen_t:
+                    continue
+                seen_t.add(t_id)
+                after_id = line[m.end():].strip().lstrip("|").strip()
+                summary = re.sub(r"\|.*", "", after_id).strip() if after_id else ""
+                if not summary:
+                    summary = line.strip()
+                fc_match = re.search(r"(FC-\d+)", line)
+                linked_fc = fc_match.group(1) if fc_match else None
+                result["tests"].append({
+                    "id": t_id,
+                    "line": i,
+                    "summary": summary[:120],
+                    "linked_fc": linked_fc,
+                })
+
+    print(json.dumps(result, indent=2))
+    return 0
+
+
+def cmd_validate_config(args: argparse.Namespace) -> int:
+    root = Path(args.repo_root).resolve() if args.repo_root else repo_root_from_script()
+    config_path = root / "pew.yaml"
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    if not config_path.exists():
+        print(json.dumps({
+            "valid": False, "configured": False,
+            "errors": ["pew.yaml not found"], "warnings": [],
+        }, indent=2))
+        return 1
+
+    config = load_config(root)
+
+    if config["project"]["name"] in ("My Project", ""):
+        errors.append("project.name is not set")
+
+    if not config["commands"]["verify"]:
+        warnings.append("commands.verify is empty — verification step will have nothing to run")
+
+    if not config["stack"]["description"]:
+        warnings.append("stack.description is empty — review profile matching may be less accurate")
+
+    for key in ("tracker", "plan"):
+        p = root / config["paths"][key]
+        if not p.parent.exists():
+            warnings.append(f"paths.{key} parent directory does not exist: {p.parent}")
+
+    result = {
+        "valid": len(errors) == 0,
+        "configured": True,
+        "errors": errors,
+        "warnings": warnings,
+    }
+    print(json.dumps(result, indent=2))
+    return 0 if not errors else 1
 
 
 def cmd_generate_verify_commands(args: argparse.Namespace) -> int:
@@ -697,6 +1012,20 @@ def build_parser() -> argparse.ArgumentParser:
     dc.add_argument("--scope", default=None, choices=sorted(CONFIG_SCOPES.keys()),
                     help="Limit output to fields relevant to a specific role (agent, council, research).")
     dc.set_defaults(func=cmd_dump_config)
+
+    rp = sub.add_parser("resolve-profiles", help="Match and output review profiles for a file list.")
+    rp.add_argument("--profiles-dir", required=True, help="Path to review-profiles/ directory.")
+    rp.add_argument("--files", default=None, help="Comma-separated list of changed files to match against.")
+    rp.add_argument("--summary", action="store_true", help="Output condensed summaries instead of full profiles.")
+    rp.add_argument("--json", action="store_true", help="Output matched profile metadata as JSON.")
+    rp.set_defaults(func=cmd_resolve_profiles)
+
+    ei = sub.add_parser("extract-ids", help="Extract compact FC/T index from BRD + SPEC.")
+    ei.add_argument("--phase", type=int, required=True)
+    ei.set_defaults(func=cmd_extract_ids)
+
+    vc = sub.add_parser("validate-config", help="Validate pew.yaml configuration.")
+    vc.set_defaults(func=cmd_validate_config)
 
     gvc = sub.add_parser("generate-verify-commands", help="Output verify/e2e commands from config.")
     gvc.set_defaults(func=cmd_generate_verify_commands)

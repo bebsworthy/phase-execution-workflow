@@ -811,6 +811,11 @@ class TestScopedConfig:
         assert "council" not in config
 
     def test_scope_council(self, repo: Path):
+        # Add conventions_file so it appears in output (empty values are stripped)
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "conventions_file": "docs/conventions.md",
+            "council": {"enabled": False},
+        }))
         code, out = _run(repo, "dump-config", "--scope", "council")
         assert code == 0
         config = json.loads(out)
@@ -822,6 +827,9 @@ class TestScopedConfig:
         assert "competitors" not in config
 
     def test_scope_research(self, repo: Path):
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "competitors": ["Rival"],
+        }))
         code, out = _run(repo, "dump-config", "--scope", "research")
         assert code == 0
         config = json.loads(out)
@@ -833,6 +841,9 @@ class TestScopedConfig:
         assert "conventions_file" not in config
 
     def test_no_scope_returns_full(self, repo: Path):
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "competitors": ["Rival"],
+        }))
         code, out = _run(repo, "dump-config")
         assert code == 0
         config = json.loads(out)
@@ -840,3 +851,262 @@ class TestScopedConfig:
         assert "council" in config
         assert "competitors" in config
         assert "stack" in config
+
+
+# ---------------------------------------------------------------------------
+# TestResolveProfiles
+# ---------------------------------------------------------------------------
+
+class TestResolveProfiles:
+    @pytest.fixture
+    def profiles_dir(self, tmp_path: Path) -> Path:
+        d = tmp_path / "profiles"
+        d.mkdir()
+        (d / "typescript.md").write_text(
+            "---\nname: typescript\nkeywords: [typescript, ts]\npriority: 3\n---\n\n"
+            "# TypeScript Best Practices\n\n"
+            "## Rules\n\n"
+            "### **Rule: Enable strict mode**\n\n"
+            "**Always** enable `strict: true` in tsconfig.\n\n"
+            "```json\n{\"strict\": true}\n```\n\n"
+            "- **Why:** Catches bugs.\n",
+            encoding="utf-8",
+        )
+        (d / "react.md").write_text(
+            "---\nname: react\nkeywords: [react, jsx, tsx, component]\npriority: 10\n"
+            "extends:\n  - typescript.md\n---\n\n"
+            "# React Best Practices\n\n"
+            "### **Rule: Use functional components**\n\n"
+            "**Prefer** function components over class components.\n",
+            encoding="utf-8",
+        )
+        (d / "_base.md").write_text(
+            "---\nname: base\nkeywords: [javascript]\npriority: 1\n---\n\n"
+            "# Base\n",
+            encoding="utf-8",
+        )
+        return d
+
+    def test_matches_by_extension(self, profiles_dir: Path):
+        parser = pw.build_parser()
+        args = parser.parse_args([
+            "resolve-profiles", "--profiles-dir", str(profiles_dir),
+            "--files", "src/app.ts", "--json",
+        ])
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = args.func(args)
+        assert code == 0
+        result = json.loads(buf.getvalue())
+        names = [p["name"] for p in result["profiles"]]
+        assert "typescript" in names
+
+    def test_extends_resolved(self, profiles_dir: Path):
+        parser = pw.build_parser()
+        args = parser.parse_args([
+            "resolve-profiles", "--profiles-dir", str(profiles_dir),
+            "--files", "src/App.tsx", "--json",
+        ])
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = args.func(args)
+        assert code == 0
+        result = json.loads(buf.getvalue())
+        names = [p["name"] for p in result["profiles"]]
+        # typescript should be resolved via react's extends
+        assert "typescript" in names
+        assert "react" in names
+        # Priority order: typescript (3) before react (10)
+        assert names.index("typescript") < names.index("react")
+
+    def test_underscore_files_skipped(self, profiles_dir: Path):
+        parser = pw.build_parser()
+        args = parser.parse_args([
+            "resolve-profiles", "--profiles-dir", str(profiles_dir),
+            "--files", "src/app.js", "--json",
+        ])
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = args.func(args)
+        assert code == 0
+        result = json.loads(buf.getvalue())
+        names = [p["name"] for p in result["profiles"]]
+        assert "base" not in names
+
+    def test_summary_strips_code_blocks(self, profiles_dir: Path):
+        parser = pw.build_parser()
+        args = parser.parse_args([
+            "resolve-profiles", "--profiles-dir", str(profiles_dir),
+            "--files", "src/app.ts", "--summary",
+        ])
+        import io, contextlib
+        buf = io.StringIO()
+        err = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(err):
+            code = args.func(args)
+        assert code == 0
+        output = buf.getvalue()
+        assert "```" not in output
+        assert "strict" in output.lower()
+
+    def test_no_match_returns_empty(self, profiles_dir: Path):
+        parser = pw.build_parser()
+        args = parser.parse_args([
+            "resolve-profiles", "--profiles-dir", str(profiles_dir),
+            "--files", "data.csv", "--json",
+        ])
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = args.func(args)
+        assert code == 0
+        result = json.loads(buf.getvalue())
+        assert result["profiles"] == []
+
+
+# ---------------------------------------------------------------------------
+# TestExtractIds
+# ---------------------------------------------------------------------------
+
+class TestExtractIds:
+    def test_extracts_fc_and_t_ids(self, repo: Path):
+        _run(repo, "add-phase", "--number", "1", "--title", "Login")
+        pdir = repo / "phases/phase-1-login"
+        pdir.mkdir(parents=True, exist_ok=True)
+
+        (pdir / "BRD.md").write_text(
+            "# BRD\n\n"
+            "| ID | Capability |\n"
+            "| --- | --- |\n"
+            "| FC-001 | User can log in with email |\n"
+            "| FC-002 | User can reset password |\n",
+            encoding="utf-8",
+        )
+        (pdir / "SPEC.md").write_text(
+            "# SPEC\n\n"
+            "| ID | FC | Test |\n"
+            "| --- | --- | --- |\n"
+            "| T-001 | FC-001 | Validate email format |\n"
+            "| T-002 | FC-002 | Reset flow e2e |\n",
+            encoding="utf-8",
+        )
+
+        code, out = _run(repo, "extract-ids", "--phase", "1")
+        assert code == 0
+        result = json.loads(out)
+        assert len(result["capabilities"]) == 2
+        assert result["capabilities"][0]["id"] == "FC-001"
+        assert result["capabilities"][0]["line"] > 0
+        assert len(result["tests"]) == 2
+        assert result["tests"][0]["linked_fc"] == "FC-001"
+
+    def test_deduplicates_ids(self, repo: Path):
+        _run(repo, "add-phase", "--number", "1", "--title", "Login")
+        pdir = repo / "phases/phase-1-login"
+        pdir.mkdir(parents=True, exist_ok=True)
+
+        (pdir / "BRD.md").write_text(
+            "FC-001 first mention\nFC-001 second mention\n",
+            encoding="utf-8",
+        )
+        (pdir / "SPEC.md").write_text("", encoding="utf-8")
+
+        code, out = _run(repo, "extract-ids", "--phase", "1")
+        assert code == 0
+        result = json.loads(out)
+        assert len(result["capabilities"]) == 1
+
+    def test_missing_files_returns_empty(self, repo: Path):
+        _run(repo, "add-phase", "--number", "1", "--title", "Login")
+        code, out = _run(repo, "extract-ids", "--phase", "1")
+        assert code == 0
+        result = json.loads(out)
+        assert result["capabilities"] == []
+        assert result["tests"] == []
+
+
+# ---------------------------------------------------------------------------
+# TestCompactConfig
+# ---------------------------------------------------------------------------
+
+class TestCompactConfig:
+    def test_empty_fields_stripped(self, repo: Path):
+        code, out = _run(repo, "dump-config")
+        assert code == 0
+        config = json.loads(out)
+        # Default empty fields should be stripped
+        assert "conventions_file" not in config
+        assert "competitors" not in config
+        # Empty nested dicts with all-empty values should be stripped
+        for key in ("guidelines",):
+            if "paths" in config:
+                assert key not in config["paths"]
+
+    def test_compact_json_format(self, repo: Path):
+        code, out = _run(repo, "dump-config")
+        assert code == 0
+        # Compact JSON has no spaces after : or ,
+        assert ": " not in out
+        assert ", " not in out
+
+
+# ---------------------------------------------------------------------------
+# TestValidateConfig
+# ---------------------------------------------------------------------------
+
+class TestValidateConfig:
+    def test_no_pew_yaml(self, repo: Path):
+        # Remove the pew.yaml that the repo fixture creates
+        pew = repo / "pew.yaml"
+        if pew.exists():
+            pew.unlink()
+        code, out = _run(repo, "validate-config")
+        assert code == 1
+        result = json.loads(out)
+        assert result["configured"] is False
+        assert result["valid"] is False
+        assert "pew.yaml not found" in result["errors"]
+
+    def test_default_name_is_error(self, repo: Path):
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "project": {"name": "My Project"},
+        }))
+        code, out = _run(repo, "validate-config")
+        assert code == 1
+        result = json.loads(out)
+        assert result["configured"] is True
+        assert result["valid"] is False
+        assert any("project.name" in e for e in result["errors"])
+
+    def test_valid_config(self, repo: Path):
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "project": {"name": "Real App", "description": "A real app"},
+            "stack": {"description": "React, TypeScript"},
+            "commands": {"verify": "npm test"},
+        }))
+        code, out = _run(repo, "validate-config")
+        assert code == 0
+        result = json.loads(out)
+        assert result["configured"] is True
+        assert result["valid"] is True
+        assert result["errors"] == []
+
+    def test_missing_verify_warns(self, repo: Path):
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "project": {"name": "Real App"},
+        }))
+        code, out = _run(repo, "validate-config")
+        result = json.loads(out)
+        assert any("commands.verify" in w for w in result["warnings"])
+
+    def test_missing_stack_warns(self, repo: Path):
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "project": {"name": "Real App"},
+            "commands": {"verify": "npm test"},
+        }))
+        code, out = _run(repo, "validate-config")
+        result = json.loads(out)
+        assert any("stack.description" in w for w in result["warnings"])
