@@ -15,7 +15,7 @@ last_updated: YYYY-MM-DD
 
 ## 3. Market Research Summary
 
-<!-- Key findings from feature-benchmarker agent. Full research at {config.paths.research}/<topic-slug>.md -->
+<!-- Key findings from build-feature-benchmarker agent. Full research at {config.paths.research}/<topic-slug>.md -->
 
 ## 4. Idea Catalog (By Category)
 

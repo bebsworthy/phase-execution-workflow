@@ -15,7 +15,7 @@
      - Always active: `council-security`, `council-architecture`, `council-testing`, `council-test-quality`
      - Conditional: `council-frontend` (if phase has `frontend` tag or `config.stack.frontend_src` is set)
      - Conditional: `council-backend` (if phase has `backend` tag or server-side files are in the diff)
-     - Conditional: `product-reviewer` (if phase has `frontend` tag and `config.product_review.enabled` is true) — dispatched in Step 7b, not 7a
+     - Conditional: `build-product-reviewer` (if phase has `frontend` tag and `config.product_review.enabled` is true) — dispatched in Step 7b, not 7a
   5. **RESOLVE REVIEW PROFILES**: Run `pw.sh resolve-profiles --profiles-dir ${CLAUDE_PLUGIN_ROOT}/review-profiles/ --files <comma-separated-phase-diff-files> --summary`. This auto-matches profiles by file extensions/keywords, resolves extends chains, and outputs condensed summaries (headers + rule names, no code blocks). The full profile path is included in each summary header so experts can read full details when needed.
   6. **BUILD ARTIFACT INDEX**: Run `pw.sh extract-ids --phase N`. This outputs a compact JSON index of all FC-nnn (from BRD) and T-nnn (from SPEC) with line numbers and summaries. Pass this index to experts instead of full BRD/SPEC content — experts can `Read` specific line ranges when writing findings that need full context.
   7. **DISPATCH** all active experts **in parallel** using the Agent tool. Each expert receives:
@@ -37,8 +37,8 @@
 - **Step 7b — Verify**:
   - Run `{config.commands.verify}` (lint + typecheck + test:all); for frontend phases also run `{config.commands.e2e}`
   - Code quality check: review test files for empty assertions, `.toBeDefined()`-only tests, mocking the subject under test
-  - Spawn alignment checker (see `agents/alignment-checker.md`): verify each FC-nnn has implementation, each T-nnn has test
-  - If phase has `frontend` tag and `config.product_review.enabled` is true: spawn `product-reviewer` agent (see `agents/product-reviewer.md`). Provide BRD.md path, `config.product_review.app_url`, and `config.product_review.start_command`. The product reviewer uses Chrome MCP or Playwright MCP to navigate the running app and validate each FC-nnn and E2E test flow. Merge PR-nnn findings into the issue list with the same severity classification. If browser tools are unavailable, the review is skipped with a warning — add a finding to the issue list: `PR-SKIP | P2 | "Browser testing unavailable — manual validation required before CLOSE"`. The approval gate (Step 7d) must surface this to the user.
+  - Spawn alignment checker (see `agents/build-alignment-checker.md`): verify each FC-nnn has implementation, each T-nnn has test
+  - If phase has `frontend` tag and `config.product_review.enabled` is true: spawn `build-product-reviewer` agent (see `agents/build-product-reviewer.md`). Provide BRD.md path, `config.product_review.app_url`, and `config.product_review.start_command`. The product reviewer uses Chrome MCP or Playwright MCP to navigate the running app and validate each FC-nnn and E2E test flow. Merge PR-nnn findings into the issue list with the same severity classification. If browser tools are unavailable, the review is skipped with a warning — add a finding to the issue list: `PR-SKIP | P2 | "Browser testing unavailable — manual validation required before CLOSE"`. The approval gate (Step 7d) must surface this to the user.
   - Reconcile documentation drift (architecture, domain, API, developer docs)
   - Classify each issue by severity:
     - **P1 (Critical)**: Broken functionality, test failures, type errors, security issues. Must fix before close.

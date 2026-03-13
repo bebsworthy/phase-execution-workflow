@@ -1,5 +1,5 @@
 ---
-name: product-reviewer
+name: build-product-reviewer
 description: Product-owner browser testing agent. Launches the running app via browser tools, validates each FC-nnn from the BRD visually and functionally, returns structured JSON findings.
 tools: Read, Grep, Glob, Bash
 ---

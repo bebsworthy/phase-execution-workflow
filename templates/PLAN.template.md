@@ -35,4 +35,4 @@ last_updated: YYYY-MM-DD
 
 ---
 
-Instructions: See SKILL.md Step 5-7 for authoring rules. Task statuses: todo|in_progress|done|descoped. Track groups independent tasks for parallel execution (A, B, C). Agent suggests best-suited tech agent (e.g., frontend-developer, backend-developer). Both Track and Agent are optional. Run verify-traceability before advancing.
+Instructions: See SKILL.md Step 5-7 for authoring rules. Task statuses: todo|in_progress|done|descoped. Track groups independent tasks for parallel execution (A, B, C). Agent suggests best-suited tech agent (e.g., build-frontend-developer, build-backend-developer). Both Track and Agent are optional. Run verify-traceability before advancing.

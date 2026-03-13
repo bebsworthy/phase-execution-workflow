@@ -1,5 +1,5 @@
 ---
-name: alignment-checker
+name: build-alignment-checker
 description: Verify that implementation code matches SPEC and BRD at the CHECK step. Ensures every functional capability has implementation and every test plan entry has a test. Spawn during Step 7 (CHECK) before closing a phase.
 tools: Read, Grep, Glob, Bash
 ---

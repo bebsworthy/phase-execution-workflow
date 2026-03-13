@@ -22,7 +22,7 @@ Config fields used throughout this skill:
 - `config.commands.verify` — full CI verification command
 - `config.commands.e2e` — frontend e2e test command
 - `config.stack.description` — tech stack summary for UX agents
-- `config.competitors` — competitor list for feature-benchmarker
+- `config.competitors` — competitor list for build-feature-benchmarker
 - `config.conventions_file` — path to conventions doc (if set)
 - `config.council.enabled` — whether council review runs during CHECK (default: true)
 - `config.council.max_findings_per_expert` — cap per expert (default: 15)
@@ -30,7 +30,7 @@ Config fields used throughout this skill:
 - `config.council.experts` — optional per-domain config (reference docs, custom agent files, file patterns)
 - `config.approval_gates.before_build` — require explicit user approval before BUILD (default: true)
 - `config.approval_gates.before_close` — require explicit user approval before CLOSE (default: true)
-- `config.product_review.enabled` — whether product-reviewer runs during CHECK (default: true for frontend phases)
+- `config.product_review.enabled` — whether build-product-reviewer runs during CHECK (default: true for frontend phases)
 - `config.product_review.app_url` — URL of running app for browser testing (default: `http://localhost:5173`)
 - `config.product_review.start_command` — command to start the app if not reachable (e.g., `make dev-up`)
 - `config.review_profiles_dir` — directory of composable tech best-practice profiles (default: `${CLAUDE_PLUGIN_ROOT}/review-profiles/`)
@@ -62,7 +62,7 @@ Phases have a `size` field (`small | medium | large`, default: `large`) that con
 
 Skipped steps are pre-set to `skipped` status when the phase is created via `pw.sh add-phase --size <size>`. The `analyze-phase` command respects skipped steps and resumes from the first non-skipped incomplete step.
 
-For **medium** phases, RESEARCH still runs but skips the feature-benchmarker (market research) and UX research/design sub-agents — focus on technical research only.
+For **medium** phases, RESEARCH still runs but skips the build-feature-benchmarker (market research) and UX research/design sub-agents — focus on technical research only.
 
 For **small** phases, the BRD should be minimal: just FCs + acceptance criteria, no E2E test flows unless the phase is frontend-tagged.
 
@@ -112,7 +112,7 @@ Only read the step file you are about to execute. Do not pre-load other steps.
 | `continue phase <N> auto`                 | analyze → resume from first incomplete, run to completion                 |
 | `continue phase <N>`                      | analyze → execute next incomplete step only                               |
 | `check phase <N> skip council`            | Execute Step 7 without council review (skip 7a, start at 7b)              |
-| `start ideas for phase <N> skip research` | Execute Step 1 without feature-benchmarker (internal/technical phases)    |
+| `start ideas for phase <N> skip research` | Execute Step 1 without build-feature-benchmarker (internal/technical phases)    |
 
 ### Script Commands Reference
 
@@ -150,7 +150,7 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh <command>
 
 - **Traceability gate**: run `pw.sh verify-traceability` before advancing between steps (IDEAS→BRD, BRD→SPEC, SPEC→PLAN)
 - **Code quality gate**: `{config.commands.verify}` must pass before phase close; also check for fake tests (empty assertions, toBeDefined-only, mocked subjects)
-- **Alignment gate**: at verification, spawn alignment-checker to verify FC→implementation and T→test coverage; reports aligned/misaligned/missing
+- **Alignment gate**: at verification, spawn build-alignment-checker to verify FC→implementation and T→test coverage; reports aligned/misaligned/missing
 
 ### Severity Classification
 

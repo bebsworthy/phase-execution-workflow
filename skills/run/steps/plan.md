@@ -6,7 +6,7 @@
 - Ordered task list (PH-nnn) with dependencies and acceptance criteria
 - Task statuses: `todo | in_progress | done | descoped`
 - **Parallel tracks**: Group independent tasks into named tracks (A, B, C...). Track A = foundation tasks with no dependencies. Subsequent tracks may execute in parallel once their track-level dependencies are met.
-- **Agent assignment**: For each task, suggest a tech agent based on task type: frontend component/hook/page work → `frontend-developer`, backend service/controller/migration → `backend-developer`. If no specific agent fits, leave blank (main agent handles it).
+- **Agent assignment**: For each task, suggest a tech agent based on task type: frontend component/hook/page work → `build-frontend-developer`, backend service/controller/migration → `build-backend-developer`. If no specific agent fits, leave blank (main agent handles it).
 - **Gate**: run `pw.sh verify-traceability --phase N --from spec --to plan` before advancing
 - Atomic commit on completion
 - Run `pw.sh set-step-status --phase N --step plan --status complete`

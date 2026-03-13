@@ -1,5 +1,5 @@
 ---
-name: feature-benchmarker
+name: build-feature-benchmarker
 description: Deep industry research for the IDEAS step. Investigates best practices, competitor features, and domain standards. Spawn at the start of IDEAS unless the phase is purely internal/technical.
 tools: Read, Write, Edit, Glob, Grep, WebSearch, WebFetch
 ---

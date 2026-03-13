@@ -4,7 +4,7 @@
 - **Input**: Phase brief (from `{config.paths.tracker}` `brief` field), phase title/tags, previous phase RETRO.md (if exists)
 - Read template reference: `templates/IDEAS.template.md`
 - **Step 1a — Current state review**: Before generating ideas, review what the app currently does in the relevant area. Read existing code, routes, components, and API endpoints related to the phase topic. Summarize current capabilities as context for ideation.
-- **Step 1b — Market research**: Spawn the feature-benchmarker agent (see `agents/feature-benchmarker.md`). Provide: phase brief, title, tags, current app capabilities summary, list of existing files in `{config.paths.research}/`, and the research log. Research output saved to `{config.paths.research}/benchmark-<topic-slug>.md`.
+- **Step 1b — Market research**: Spawn the build-feature-benchmarker agent (see `agents/build-feature-benchmarker.md`). Provide: phase brief, title, tags, current app capabilities summary, list of existing files in `{config.paths.research}/`, and the research log. Research output saved to `{config.paths.research}/benchmark-<topic-slug>.md`.
 - **Step 1c — Ideation**: Using the market research brief + current state review + phase brief, produce categorized feature suggestions. Each idea gets:
   - **Importance** (`high|medium|low`) — scored on: (1) user impact breadth (how many users benefit), (2) friction reduction (how much pain it removes), (3) competitive parity (do competitors all have this?). State which factors drive the rating.
   - **Source**: `Market Research`, `Documentation`, `Current Gap`, or `New`

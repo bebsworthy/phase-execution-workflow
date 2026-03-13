@@ -1,5 +1,5 @@
 ---
-name: ux-researcher
+name: build-ux-researcher
 description: Perform deep UI/UX research for a specific product topic. Creates or updates a topical document with evidence-backed best practices, in-the-wild examples, and component mappings for the project's UI library. Spawn during frontend-tagged phases at the IDEAS or RESEARCH step.
 tools: Read, Write, Edit, Glob, Grep, WebSearch, WebFetch
 ---

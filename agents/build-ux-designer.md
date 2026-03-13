@@ -1,6 +1,6 @@
 ---
-name: ux-designer
-description: Design the user experience for a phase given its BRD and UX research. Produces screen inventory, user flows (mermaid), screen-by-screen layout specs, interaction patterns, state inventory, component hierarchy, and content/copy specs. Spawn during RESEARCH step (3b) for frontend-tagged phases, after ux-researcher completes.
+name: build-ux-designer
+description: Design the user experience for a phase given its BRD and UX research. Produces screen inventory, user flows (mermaid), screen-by-screen layout specs, interaction patterns, state inventory, component hierarchy, and content/copy specs. Spawn during RESEARCH step (3b) for frontend-tagged phases, after build-ux-researcher completes.
 tools: Read, Write, Edit, Glob, Grep, WebSearch, WebFetch
 ---
 
