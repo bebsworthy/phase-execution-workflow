@@ -145,6 +145,7 @@ def load_tracker(root: Path, config: dict | None = None) -> dict:
     # Ensure each phase has all expected fields
     for phase in data["phases"]:
         phase.setdefault("brief", "")
+        phase.setdefault("refs", [])
         phase.setdefault("summary", "")
         phase.setdefault("depends_on", [])
         phase.setdefault("tags", [])
@@ -334,6 +335,7 @@ def cmd_analyze_phase(args: argparse.Namespace) -> int:
         "phase_dir": str(pdir),
         "tracker_status": phase["status"],
         "size": phase.get("size", "large"),
+        "refs": phase.get("refs", []),
         "steps": step_analysis,
         "first_incomplete_step": first_incomplete,
     }
@@ -378,6 +380,10 @@ def cmd_add_phase(args: argparse.Namespace) -> int:
     if args.tags:
         tags = [x.strip() for x in args.tags.split(",") if x.strip()]
 
+    refs = []
+    if args.refs:
+        refs = [x.strip() for x in args.refs.split(",") if x.strip()]
+
     size = args.size or "large"
     skip_steps = SIZE_SKIP_STEPS.get(size, set())
 
@@ -385,6 +391,7 @@ def cmd_add_phase(args: argparse.Namespace) -> int:
         "number": args.number,
         "title": args.title,
         "brief": args.brief or "",
+        "refs": refs,
         "status": "not_started",
         "summary": "",
         "depends_on": depends_on,
@@ -557,6 +564,20 @@ def cmd_verify_traceability(args: argparse.Namespace) -> int:
     return 0 if not missing else 1
 
 
+def _phase_completed_through(phase: dict, step: str) -> bool:
+    """Check if a phase has completed all steps up to and including *step*.
+
+    Skipped steps count as completed.
+    """
+    for s in STEP_ORDER:
+        status = phase["steps"].get(s, "not_started")
+        if status not in ("complete", "skipped"):
+            return False
+        if s == step:
+            return True
+    return False
+
+
 def cmd_check_dependencies(args: argparse.Namespace) -> int:
     root = Path(args.repo_root).resolve() if args.repo_root else repo_root_from_script()
     config = load_config(root)
@@ -566,13 +587,27 @@ def cmd_check_dependencies(args: argparse.Namespace) -> int:
         print(f"Phase {args.phase} not found in tracker.")
         return 1
 
+    through = getattr(args, "through", None)
+    if through and through not in STEP_ORDER:
+        print(f"Invalid step '{through}'. Expected: {', '.join(STEP_ORDER)}")
+        return 1
+
     depends_on = phase.get("depends_on", [])
     met = []
     unmet = []
 
     for dep_num in depends_on:
         dep_phase = find_phase(data, dep_num)
-        if dep_phase and dep_phase.get("status") == "complete":
+        if dep_phase is None:
+            unmet.append(dep_num)
+            continue
+
+        if through:
+            is_met = _phase_completed_through(dep_phase, through)
+        else:
+            is_met = dep_phase.get("status") == "complete"
+
+        if is_met:
             met.append(dep_num)
         else:
             unmet.append(dep_num)
@@ -979,6 +1014,8 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("--brief", default=None, help="Phase brief: what this phase delivers and why.")
     add.add_argument("--depends-on", default=None, help="Comma-separated dependency phase numbers.")
     add.add_argument("--tags", default=None, help="Comma-separated tags (e.g., frontend,backend).")
+    add.add_argument("--refs", default=None,
+                     help="Comma-separated reference doc paths (relative to repo root) for agents to read.")
     add.add_argument("--size", default=None, choices=sorted(VALID_PHASE_SIZES),
                      help="Phase size: small skips IDEAS+RESEARCH, medium skips IDEAS, large runs all steps (default: large).")
     add.set_defaults(func=cmd_add_phase)
@@ -1002,6 +1039,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     cd = sub.add_parser("check-dependencies", help="Check if phase dependencies are satisfied.")
     cd.add_argument("--phase", type=int, required=True)
+    cd.add_argument("--through", default=None,
+                    help="Check that dependencies completed through this step (e.g., plan) instead of fully complete.")
     cd.set_defaults(func=cmd_check_dependencies)
 
     pd = sub.add_parser("phase-diff", help="Show files changed since phase start.")

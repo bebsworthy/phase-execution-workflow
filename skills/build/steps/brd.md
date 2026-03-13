@@ -1,7 +1,7 @@
 # Step 2: BRD (BRD.md)
 
 - Run `pw.sh set-step-status --phase N --step brd --status in_progress`
-- **Input**: IDEAS.md selected items, project docs
+- **Input**: IDEAS.md selected items, project docs, phase `refs` docs (if any — read each referenced file to resolve finding IDs and user goals cited in the brief)
 - Read template reference: `templates/BRD.template.md`
 - Define scope, goals, non-goals, deliverables, acceptance criteria
 - Functional requirements as capability contract: FC-nnn with actor, preconditions, action, response, not-allowed, error mapping, evidence target

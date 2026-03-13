@@ -1,7 +1,7 @@
 # Step 3: RESEARCH (RESEARCH.md)
 
 - Run `pw.sh set-step-status --phase N --step research --status in_progress`
-- **Input**: BRD.md, project docs/code
+- **Input**: BRD.md, project docs/code, phase `refs` docs (if any — read each referenced file for prior research, UX audit findings, etc.)
 - Read template reference: `templates/RESEARCH.template.md`
 - **Architecture baseline**: Before starting research, check if `{config.paths.research}/architecture-reference.md` exists. If it exists, read it as baseline context — research should focus on novel, phase-specific findings only. If it does not exist, create it as part of this step: perform a one-time codebase architecture analysis covering project structure, module boundaries, data flow patterns, key abstractions, and tech stack details. Save to `{config.paths.research}/architecture-reference.md`. Future phases reference this doc instead of re-analyzing. When architecture changes significantly during a phase's BUILD step, update the shared doc.
 - **Conciseness target**: RESEARCH.md should contain fewer than 2000 tokens of novel, phase-specific content. Reference shared docs (architecture-reference.md, prior UX research) for baseline context rather than restating it.

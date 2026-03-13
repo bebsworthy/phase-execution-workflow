@@ -41,6 +41,12 @@ competitors: []
 #   medium — skips IDEAS (no market research)
 #   small  — skips IDEAS + RESEARCH (minimal BRD → PLAN → BUILD → CHECK)
 
+# --- Phase References ---
+# Phases can link external docs (UX audits, research, etc.) via the `refs` field.
+# Agents read these to resolve finding IDs (F-001, J-001) cited in the brief.
+# Add via CLI:  pw.sh add-phase --refs "ux-review/04-audit.md,ux-review/01-goals.md"
+# Or directly in the tracker YAML under each phase's `refs` list.
+
 # --- Conventions ---
 conventions_file: '' # path to a conventions/decisions doc (optional)
 

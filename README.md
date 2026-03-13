@@ -119,6 +119,8 @@ Not every change needs the full 7-step loop. Use `--size` when adding phases:
   start phase <N>              # begin at first incomplete step
   start phase <N> auto         # run all steps, pause at gates
   continue phase <N>           # resume next incomplete step
+  plan phase <N>               # run IDEAS through PLAN, stop before BUILD
+  plan phase <N> auto          # same in auto mode
   start building phase <N>     # explicit BUILD approval
   check phase <N>              # run CHECK/CLOSE
   status phase <N>             # show progress

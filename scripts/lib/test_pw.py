@@ -61,7 +61,8 @@ def _run(repo: Path, *cli_args: str) -> tuple[int, str]:
 def _add_phase(repo: Path, number: int = 24, title: str = "Search",
                tags: str | None = "frontend,backend",
                depends_on: str | None = None,
-               brief: str | None = "Add search") -> int:
+               brief: str | None = "Add search",
+               refs: str | None = None) -> int:
     """Helper to add a phase."""
     cli = ["add-phase", "--number", str(number), "--title", title]
     if tags:
@@ -70,6 +71,8 @@ def _add_phase(repo: Path, number: int = 24, title: str = "Search",
         cli += ["--depends-on", depends_on]
     if brief:
         cli += ["--brief", brief]
+    if refs:
+        cli += ["--refs", refs]
     code, _ = _run(repo, *cli)
     return code
 
@@ -116,6 +119,7 @@ class TestLoadTracker:
         data = pw.load_tracker(tmp_path)
         phase = data["phases"][0]
         assert phase["brief"] == ""
+        assert phase["refs"] == []
         assert phase["depends_on"] == []
         assert phase["tags"] == []
         assert phase["start_commit"] is None
@@ -195,6 +199,19 @@ class TestAddPhase:
         _add_phase(repo, brief="Full-text search across issues")
         data = pw.load_tracker(repo)
         assert data["phases"][0]["brief"] == "Full-text search across issues"
+
+    def test_refs_stored(self, repo: Path):
+        _add_phase(repo, refs="ux-review/04-audit.md,ux-review/01-user-goals.md")
+        data = pw.load_tracker(repo)
+        assert data["phases"][0]["refs"] == [
+            "ux-review/04-audit.md",
+            "ux-review/01-user-goals.md",
+        ]
+
+    def test_refs_default_empty(self, repo: Path):
+        _add_phase(repo)
+        data = pw.load_tracker(repo)
+        assert data["phases"][0]["refs"] == []
 
 
 # ---------------------------------------------------------------------------
@@ -328,6 +345,12 @@ class TestAnalyzePhase:
         assert "Phase 24: Search" in out
         assert "First incomplete step: ideas" in out
 
+    def test_refs_in_json(self, repo: Path):
+        _add_phase(repo, refs="docs/audit.md,docs/goals.md")
+        code, out = _run(repo, "analyze-phase", "--phase", "24", "--json")
+        result = json.loads(out)
+        assert result["refs"] == ["docs/audit.md", "docs/goals.md"]
+
     def test_not_found(self, repo: Path):
         code, out = _run(repo, "analyze-phase", "--phase", "999", "--json")
         assert code == 1
@@ -433,6 +456,57 @@ class TestCheckDependencies:
         result = json.loads(out)
         assert result["satisfied"] is False
         assert result["unmet"] == [1]
+
+    def test_through_plan_satisfied(self, repo: Path):
+        """Phase 2 can proceed if phase 1 has completed through plan."""
+        _add_phase(repo, 1, "First")
+        _add_phase(repo, 2, "Second", depends_on="1")
+        # Complete phase 1 through plan (5 steps)
+        for step in ["ideas", "brd", "research", "spec", "plan"]:
+            _run(repo, "set-step-status", "--phase", "1",
+                 "--step", step, "--status", "in_progress")
+            _run(repo, "set-step-status", "--phase", "1",
+                 "--step", step, "--status", "complete")
+        code, out = _run(repo, "check-dependencies", "--phase", "2",
+                         "--through", "plan")
+        assert code == 0
+        assert json.loads(out)["satisfied"] is True
+
+    def test_through_plan_unmet(self, repo: Path):
+        """Phase 2 blocked if phase 1 has only completed through research."""
+        _add_phase(repo, 1, "First")
+        _add_phase(repo, 2, "Second", depends_on="1")
+        for step in ["ideas", "brd", "research"]:
+            _run(repo, "set-step-status", "--phase", "1",
+                 "--step", step, "--status", "in_progress")
+            _run(repo, "set-step-status", "--phase", "1",
+                 "--step", step, "--status", "complete")
+        code, out = _run(repo, "check-dependencies", "--phase", "2",
+                         "--through", "plan")
+        assert code == 1
+        assert json.loads(out)["satisfied"] is False
+
+    def test_through_with_skipped_steps(self, repo: Path):
+        """Skipped steps count as completed for --through checks."""
+        _run(repo, "add-phase", "--number", "1", "--title", "First", "--size", "small")
+        _add_phase(repo, 2, "Second", depends_on="1")
+        # Small phase: ideas and research are skipped. Complete brd, spec, plan.
+        for step in ["brd", "spec", "plan"]:
+            _run(repo, "set-step-status", "--phase", "1",
+                 "--step", step, "--status", "in_progress")
+            _run(repo, "set-step-status", "--phase", "1",
+                 "--step", step, "--status", "complete")
+        code, out = _run(repo, "check-dependencies", "--phase", "2",
+                         "--through", "plan")
+        assert code == 0
+        assert json.loads(out)["satisfied"] is True
+
+    def test_through_without_deps_is_satisfied(self, repo: Path):
+        _add_phase(repo, 1, "Solo")
+        code, out = _run(repo, "check-dependencies", "--phase", "1",
+                         "--through", "plan")
+        assert code == 0
+        assert json.loads(out)["satisfied"] is True
 
 
 # ---------------------------------------------------------------------------

@@ -49,6 +49,26 @@ Config fields used throughout this skill:
 - **Sub-agent contracts**: `${CLAUDE_PLUGIN_ROOT}/agents/` (see `agents/README.md` for index)
 - **Review profiles**: `${CLAUDE_PLUGIN_ROOT}/review-profiles/` — composable, generic tech best practices. Injected into council experts (CHECK) and tech agents (BUILD). Complement project-specific playbooks in `{config.paths.guidelines}/`.
 - **Phase naming**: convert title to kebab-case (e.g., "Phase 24 Advanced Search" → `phase-24-advanced-search`)
+- **Phase refs**: optional list of reference doc paths (relative to repo root) on each phase. Agents read these during IDEAS, BRD, RESEARCH, and BUILD to resolve finding IDs (e.g., `F-001`), user goals (e.g., `J-001`), and other external context cited in the brief.
+
+### Phase References
+
+Phases can include a `refs` list pointing to external research, UX audits, or any docs that provide context for finding IDs in the brief:
+
+```yaml
+- number: 5
+  title: Read/Unread Tracking
+  brief: "Server-side read state tracking (F-001). Serves J-001."
+  refs:
+    - ux-review/04-audit.md
+    - ux-review/01-user-goals.md
+```
+
+When a phase has refs, **every step that reads the brief MUST also read the ref docs** to resolve IDs and understand the full context. Pass ref contents to sub-agents alongside the brief.
+
+Add refs via CLI: `pw.sh add-phase --number 5 --title "Read/Unread" --refs "ux-review/04-audit.md,ux-review/01-user-goals.md"`
+
+Or add them directly to the tracker YAML under the phase's `refs` field.
 
 ### Phase Sizing
 
@@ -111,6 +131,8 @@ Only read the step file you are about to execute. Do not pre-load other steps.
 | `start phase <N> auto`                    | run all steps in order, enforce gates (auto-inits on first step)          |
 | `continue phase <N> auto`                 | analyze → resume from first incomplete, run to completion                 |
 | `continue phase <N>`                      | analyze → execute next incomplete step only                               |
+| `plan phase <N>`                          | Run IDEAS through PLAN only (Steps 1-5), stop before BUILD               |
+| `plan phase <N> auto`                     | Same as above in auto mode (gates still fire)                             |
 | `check phase <N> skip council`            | Execute Step 7 without council review (skip 7a, start at 7b)              |
 | `start ideas for phase <N> skip research` | Execute Step 1 without build-feature-benchmarker (internal/technical phases)    |
 
@@ -123,7 +145,7 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh <command>
   add-phase --number N --title T [--brief "..."] [--depends-on X,Y] [--tags a,b] [--size small|medium|large]
   list-phases [--status S] [--json]
   verify-traceability --phase N --from S --to S    # exit 1 if missing IDs found
-  check-dependencies --phase N
+  check-dependencies --phase N [--through S]   # --through: deps completed through step S (not fully complete)
   phase-diff --phase N                        # uses three-dot diff; assumes linear history from phase start
   validate-config                                    # check pew.yaml exists and is valid
   dump-config [--scope agent|council|research]       # compact JSON, empty defaults stripped
@@ -145,6 +167,21 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh <command>
 5. **Default-by-best-practice** — proceed + log as ADR in SPEC.md
 6. **Anti-drift lock** — before build step, only edit phase artifacts
 7. **Pre-build** — run `pw.sh check-dependencies --phase N` to verify prerequisites
+
+### Concurrent Phase Work
+
+You can plan ahead while building. Dependency checks are step-aware:
+
+- **Planning steps** (IDEAS → PLAN): dependencies only need to have completed through PLAN. Run `pw.sh check-dependencies --phase N --through plan` before starting planning steps on a dependent phase.
+- **BUILD step**: dependencies must be fully complete (`check-dependencies --phase N` without `--through`).
+- **Independent phases** (no `depends_on`): can run concurrently at any step without restriction.
+
+**`plan phase <N>`**: Runs Steps 1-5 (IDEAS through PLAN) then stops. Use this to prepare a phase while another is building. The BUILD approval gate is not reached — the phase stays in `started` status with `plan: complete, build: not_started`.
+
+This means you can:
+- Plan phase N+1 while building phase N (if N+1 depends on N and N has completed PLAN)
+- Plan multiple independent phases concurrently
+- Queue up planned phases and build them sequentially
 
 ### Quality Gates
 
