@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Git pre-push hook: auto-bump patch version in marketplace.json.
+# Git pre-push hook: auto-bump patch version in plugin.json + marketplace.json.
 #
 # Install:  ln -sf ../../scripts/pre-push-bump .git/hooks/pre-push
 #
@@ -12,9 +12,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Resolve to repo root — works whether run as hook (.git/hooks/) or directly
 REPO_ROOT="$(git rev-parse --show-toplevel)"
+PLUGIN_JSON="$REPO_ROOT/.claude-plugin/plugin.json"
 MARKETPLACE="$REPO_ROOT/.claude-plugin/marketplace.json"
 
-if [[ ! -f "$MARKETPLACE" ]]; then
+if [[ ! -f "$PLUGIN_JSON" ]]; then
   exit 0  # Not a plugin repo, skip
 fi
 
@@ -33,7 +34,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     range="$remote_sha..$local_sha"
   fi
 
-  if git diff --name-only "$range" -- ".claude-plugin/marketplace.json" | grep -q .; then
+  if git diff --name-only "$range" -- ".claude-plugin/plugin.json" ".claude-plugin/marketplace.json" | grep -q .; then
     # Version was already touched in this push, nothing to do
     exit 0
   fi
@@ -41,7 +42,7 @@ done
 
 # Version wasn't bumped — bump it now
 "$REPO_ROOT/scripts/pw.sh" bump-version --bump patch >/dev/null 2>&1
-git -C "$REPO_ROOT" add "$MARKETPLACE"
+git -C "$REPO_ROOT" add "$PLUGIN_JSON" "$MARKETPLACE"
 git -C "$REPO_ROOT" commit -m "chore: bump version (auto)"
 
 echo ""

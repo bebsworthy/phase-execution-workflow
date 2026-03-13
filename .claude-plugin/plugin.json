@@ -1,7 +1,7 @@
 {
   "name": "pew",
   "description": "Phase Execution Workflow — 7-step delivery loop (IDEAS → BRD → RESEARCH → SPEC → PLAN → BUILD → CHECK/CLOSE) with YAML tracking, quality gates, council review, and sub-agents.",
-  "version": "3.0.0",
+  "version": "4.0.2",
   "author": {
     "name": "Boyd Stratton"
   },

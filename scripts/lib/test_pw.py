@@ -1193,9 +1193,13 @@ class TestValidateConfig:
 class TestBumpVersion:
     @pytest.fixture
     def plugin_repo(self, tmp_path: Path) -> Path:
-        """Create a minimal repo with marketplace.json."""
+        """Create a minimal repo with plugin.json and marketplace.json."""
         mp_dir = tmp_path / ".claude-plugin"
         mp_dir.mkdir()
+        pj = mp_dir / "plugin.json"
+        pj.write_text(json.dumps({
+            "name": "test", "version": "2.5.3"
+        }, indent=2) + "\n")
         mp = mp_dir / "marketplace.json"
         mp.write_text(json.dumps({
             "name": "test",
@@ -1239,7 +1243,7 @@ class TestBumpVersion:
         result = json.loads(buf.getvalue())
         assert result == {"old": "2.5.3", "new": "3.0.0"}
 
-    def test_file_updated(self, plugin_repo: Path, monkeypatch):
+    def test_both_files_updated(self, plugin_repo: Path, monkeypatch):
         monkeypatch.setattr(pw, "__file__", str(plugin_repo / "scripts" / "lib" / "pw.py"))
         parser = pw.build_parser()
         args = parser.parse_args(["bump-version"])
@@ -1247,6 +1251,7 @@ class TestBumpVersion:
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             args.func(args)
+        pj = plugin_repo / ".claude-plugin" / "plugin.json"
+        assert json.loads(pj.read_text())["version"] == "2.5.4"
         mp = plugin_repo / ".claude-plugin" / "marketplace.json"
-        data = json.loads(mp.read_text())
-        assert data["plugins"][0]["version"] == "2.5.4"
+        assert json.loads(mp.read_text())["plugins"][0]["version"] == "2.5.4"

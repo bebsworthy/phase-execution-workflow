@@ -995,17 +995,18 @@ def cmd_generate_verify_commands(args: argparse.Namespace) -> int:
 
 
 def cmd_bump_version(args: argparse.Namespace) -> int:
-    """Bump the version in .claude-plugin/marketplace.json."""
-    # Find the plugin root (where pw.py lives → ../../)
+    """Bump the version in plugin.json and marketplace.json."""
     plugin_root = Path(__file__).resolve().parent.parent.parent
-    mp = plugin_root / ".claude-plugin" / "marketplace.json"
-    if not mp.exists():
-        print(json.dumps({"error": ".claude-plugin/marketplace.json not found"}))
+    plugin_dir = plugin_root / ".claude-plugin"
+
+    # plugin.json is the source of truth
+    pj = plugin_dir / "plugin.json"
+    if not pj.exists():
+        print(json.dumps({"error": ".claude-plugin/plugin.json not found"}))
         return 1
 
-    data = json.loads(mp.read_text())
-    plugin = data["plugins"][0]
-    old_version = plugin["version"]
+    pj_data = json.loads(pj.read_text())
+    old_version = pj_data["version"]
     major, minor, patch = (int(x) for x in old_version.split("."))
 
     bump = getattr(args, "bump", "patch")
@@ -1017,8 +1018,18 @@ def cmd_bump_version(args: argparse.Namespace) -> int:
         patch += 1
 
     new_version = f"{major}.{minor}.{patch}"
-    plugin["version"] = new_version
-    mp.write_text(json.dumps(data, indent=2) + "\n")
+
+    # Update plugin.json
+    pj_data["version"] = new_version
+    pj.write_text(json.dumps(pj_data, indent=2) + "\n")
+
+    # Update marketplace.json if present
+    mp = plugin_dir / "marketplace.json"
+    if mp.exists():
+        mp_data = json.loads(mp.read_text())
+        mp_data["plugins"][0]["version"] = new_version
+        mp.write_text(json.dumps(mp_data, indent=2) + "\n")
+
     print(json.dumps({"old": old_version, "new": new_version}))
     return 0
 
