@@ -54,13 +54,34 @@ commands:
 
 Everything else has sensible defaults. See `pew.yaml.example` for the full config reference.
 
+## Skills
+
+### `/pew:run` — Phase Execution
+
+The main workflow engine. Runs the 7-step loop (IDEAS → BRD → RESEARCH → SPEC → PLAN → BUILD → CHECK/CLOSE) with quality gates, council review, and auto mode. Orchestrates `build-*` and `council-*` agents during execution.
+
+### `/pew:init` — Project Setup
+
+Explores your repo, detects tech stack and verification commands, and writes `pew.yaml` after confirmation. Run again to update config when your project changes.
+
+### `/ux-audit` — UX/UI Audit
+
+Standalone 5-phase UX/UI audit that runs independently of the build workflow. Spawns 5 sequential specialist agents (`ux-audit-*`) that trace every finding back to a user goal:
+
+1. **Goals** — JTBD extraction, persona research, opportunity scoring
+2. **Implementation** — Hierarchical task analysis, cognitive walkthroughs, error taxonomy
+3. **Research** — Competitive benchmarking, pattern library, emotional design opportunities
+4. **Audit** — 12-layer evaluation (IA, onboarding, task flows, Nielsen heuristics, cognitive science, visual design, accessibility WCAG 2.2 AA, emotional design, content quality, trust, delight, dark patterns, design system maturity)
+5. **Proposals** — Graduated improvements (L1–L5) with Kano classification, phased roadmap, code skeletons, and success metrics
+
+Output: `ux-review/` directory with per-phase reports and a synthesized playbook.
+
 ## What's included
 
 | Component              | Description                                                                                                                                                                                                                     |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Skill** (`/pew:init`) | Project setup — explores repo, detects stack/commands, writes `pew.yaml`                                                                                                                                                     |
-| **Skill** (`/pew:run`) | Main workflow engine — phase lifecycle, auto mode, command dispatch                                                                                                                                                             |
-| **14 agents**          | Feature benchmarker, UX researcher/designer, alignment checker, council experts (security, architecture, testing, test-quality, frontend, backend), tech developers (frontend, backend), product reviewer |
+| **3 skills**           | `/pew:run` (build workflow), `/pew:init` (project setup), `/ux-audit` (UX/UI audit)                                                                                                                                            |
+| **19 agents**          | `build-*` (7): feature benchmarker, UX researcher/designer, alignment checker, frontend/backend developers, product reviewer. `council-*` (6): security, architecture, testing, test-quality, frontend, backend. `ux-audit-*` (5): goals, impl, research, eval, proposals. See [agents/README.md](agents/README.md) |
 | **Review profiles**    | Composable tech best practices (fundamental, TypeScript, React, NestJS, TanStack, Tailwind, SPA, REST API, PostgreSQL) — auto-detected and injected                                                                             |
 | **Templates**          | Reference templates for IDEAS, BRD, RESEARCH, SPEC, PLAN artifacts                                                                                                                                                              |
 | **Helper script**      | `pw.sh` — phase tracker management (YAML-based), traceability verification, config validation, profile resolution                                                                                                                |
@@ -101,6 +122,8 @@ Not every change needs the full 7-step loop. Use `--size` when adding phases:
   start building phase <N>     # explicit BUILD approval
   check phase <N>              # run CHECK/CLOSE
   status phase <N>             # show progress
+
+/ux-audit                      # run full 5-phase UX/UI audit
 ```
 
 ## Requirements
