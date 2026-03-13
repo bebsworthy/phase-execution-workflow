@@ -3,6 +3,7 @@ name: ux-audit
 description: >
   Shared audit methodology, severity scales, and output format for UX audit agents.
   This skill is preloaded by all ux-audit-* agents to ensure consistent output.
+user-invocable: true
 ---
 
 # UX Auditor Framework

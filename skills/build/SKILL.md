@@ -1,6 +1,7 @@
 ---
 name: build
 description: Execute delivery phase-by-phase with high technical precision: IDEAS → BRD → RESEARCH → SPEC → PLAN → BUILD → CHECK/CLOSE. Tracks phases in YAML, enforces quality gates, and supports auto mode.
+user-invocable: true
 ---
 
 # Phase Execution Workflow
