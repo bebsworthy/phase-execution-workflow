@@ -4,14 +4,14 @@
     "name": "Boyd Stratton"
   },
   "metadata": {
-    "description": "Phase Execution Workflow (PEW) — precision delivery for Claude Code"
+    "description": "Phase Execution Workflow (PEW) \u2014 precision delivery for Claude Code"
   },
   "plugins": [
     {
       "name": "pew",
       "source": "./",
       "description": "7-step delivery loop with YAML tracking, quality gates, council review, and sub-agents",
-      "version": "4.0.0",
+      "version": "4.0.1",
       "keywords": [
         "workflow",
         "phase",
