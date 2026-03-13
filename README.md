@@ -29,7 +29,7 @@ claude --plugin-dir /path/to/phase-execution-workflow
 ## Setup
 
 1. Run `/pew:init` — it explores your repo, detects your tech stack and verification commands, and writes `pew.yaml` after your confirmation
-2. Run `/pew:run` and say `start phase 1`
+2. Run `/pew:build` and say `start phase 1`
 
 You can also run `/pew:init` again later to update the config if your project structure changes.
 
@@ -56,7 +56,7 @@ Everything else has sensible defaults. See `pew.yaml.example` for the full confi
 
 ## Skills
 
-### `/pew:run` — Phase Execution
+### `/pew:build` — Phase Execution
 
 The main workflow engine. Runs the 7-step loop (IDEAS → BRD → RESEARCH → SPEC → PLAN → BUILD → CHECK/CLOSE) with quality gates, council review, and auto mode. Orchestrates `build-*` and `council-*` agents during execution.
 
@@ -80,7 +80,7 @@ Output: `ux-review/` directory with per-phase reports and a synthesized playbook
 
 | Component              | Description                                                                                                                                                                                                                     |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **3 skills**           | `/pew:run` (build workflow), `/pew:init` (project setup), `/ux-audit` (UX/UI audit)                                                                                                                                            |
+| **3 skills**           | `/pew:build` (build workflow), `/pew:init` (project setup), `/ux-audit` (UX/UI audit)                                                                                                                                            |
 | **19 agents**          | `build-*` (7): feature benchmarker, UX researcher/designer, alignment checker, frontend/backend developers, product reviewer. `council-*` (6): security, architecture, testing, test-quality, frontend, backend. `ux-audit-*` (5): goals, impl, research, eval, proposals. See [agents/README.md](agents/README.md) |
 | **Review profiles**    | Composable tech best practices (fundamental, TypeScript, React, NestJS, TanStack, Tailwind, SPA, REST API, PostgreSQL) — auto-detected and injected                                                                             |
 | **Templates**          | Reference templates for IDEAS, BRD, RESEARCH, SPEC, PLAN artifacts                                                                                                                                                              |
@@ -89,7 +89,7 @@ Output: `ux-review/` directory with per-phase reports and a synthesized playbook
 ## How it works
 
 1. **pew.yaml** at your repo root defines project-specific settings (paths, stack, commands, competitors)
-2. `/pew:run` activates the workflow — it reads config on-demand, manages phase state, and orchestrates agents
+2. `/pew:build` activates the workflow — it reads config on-demand, manages phase state, and orchestrates agents
 3. Agents receive scoped project context + review profiles + playbooks automatically
 4. Quality gates (traceability, approval, council review) enforce precision at every step
 
@@ -115,7 +115,7 @@ Not every change needs the full 7-step loop. Use `--size` when adding phases:
 ## Commands
 
 ```
-/pew:run
+/pew:build
   start phase <N>              # begin at first incomplete step
   start phase <N> auto         # run all steps, pause at gates
   continue phase <N>           # resume next incomplete step

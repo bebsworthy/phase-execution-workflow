@@ -1,5 +1,5 @@
 ---
-name: run
+name: build
 description: Execute delivery phase-by-phase with high technical precision: IDEAS → BRD → RESEARCH → SPEC → PLAN → BUILD → CHECK/CLOSE. Tracks phases in YAML, enforces quality gates, and supports auto mode.
 ---
 
@@ -78,7 +78,7 @@ Run `pw.sh analyze-phase --phase <N> --json` and resume from the first incomplet
 
 If `config.conventions_file` is set and the file exists, read it before starting any step. Conventions are settled decisions — never recommend against an accepted convention without explicit justification. When making design choices in IDEAS, BRD, SPEC, or PLAN, check conventions first.
 
-**Before executing any step**, read its instructions from `${CLAUDE_PLUGIN_ROOT}/skills/run/steps/<step>.md`:
+**Before executing any step**, read its instructions from `${CLAUDE_PLUGIN_ROOT}/skills/build/steps/<step>.md`:
 
 | Step | File | Artifact |
 | --- | --- | --- |
