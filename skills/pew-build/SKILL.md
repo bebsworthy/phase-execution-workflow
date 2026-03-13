@@ -1,5 +1,5 @@
 ---
-name: build
+name: pew-build
 description: Execute delivery phase-by-phase with high technical precision: IDEAS → BRD → RESEARCH → SPEC → PLAN → BUILD → CHECK/CLOSE. Tracks phases in YAML, enforces quality gates, and supports auto mode.
 user-invocable: true
 ---
@@ -8,7 +8,7 @@ user-invocable: true
 
 ## Configuration
 
-Project-specific settings live in `pew.yaml` at the repo root. **Before executing any command**, check if `pew.yaml` exists by running `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh validate-config`. If it returns `"configured": false`, **stop immediately** and tell the user: "PEW is not configured for this project. Run `/pew:init` to set up your project configuration." Do not proceed with any workflow commands until `pew.yaml` exists.
+Project-specific settings live in `pew.yaml` at the repo root. **Before executing any command**, check if `pew.yaml` exists by running `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh validate-config`. If it returns `"configured": false`, **stop immediately** and tell the user: "PEW is not configured for this project. Run `/pew-init` to set up your project configuration." Do not proceed with any workflow commands until `pew.yaml` exists.
 
 If `pew.yaml` exists, load the config by running `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config`. When spawning sub-agents, pass the relevant config fields from the loaded config (do not re-run the command in the agent — pass the values directly).
 
@@ -99,7 +99,7 @@ Run `pw.sh analyze-phase --phase <N> --json` and resume from the first incomplet
 
 If `config.conventions_file` is set and the file exists, read it before starting any step. Conventions are settled decisions — never recommend against an accepted convention without explicit justification. When making design choices in IDEAS, BRD, SPEC, or PLAN, check conventions first.
 
-**Before executing any step**, read its instructions from `${CLAUDE_PLUGIN_ROOT}/skills/build/steps/<step>.md`:
+**Before executing any step**, read its instructions from `${CLAUDE_PLUGIN_ROOT}/skills/pew-build/steps/<step>.md`:
 
 | Step | File | Artifact |
 | --- | --- | --- |

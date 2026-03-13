@@ -1,5 +1,5 @@
 ---
-name: init
+name: pew-init
 description: Initialize or update PEW configuration for a project. Explores the repo, detects tech stack, verification commands, and project structure, then writes pew.yaml.
 user-invocable: true
 ---
