@@ -994,6 +994,35 @@ def cmd_generate_verify_commands(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_bump_version(args: argparse.Namespace) -> int:
+    """Bump the version in .claude-plugin/marketplace.json."""
+    # Find the plugin root (where pw.py lives → ../../)
+    plugin_root = Path(__file__).resolve().parent.parent.parent
+    mp = plugin_root / ".claude-plugin" / "marketplace.json"
+    if not mp.exists():
+        print(json.dumps({"error": ".claude-plugin/marketplace.json not found"}))
+        return 1
+
+    data = json.loads(mp.read_text())
+    plugin = data["plugins"][0]
+    old_version = plugin["version"]
+    major, minor, patch = (int(x) for x in old_version.split("."))
+
+    bump = getattr(args, "bump", "patch")
+    if bump == "major":
+        major, minor, patch = major + 1, 0, 0
+    elif bump == "minor":
+        major, minor, patch = major, minor + 1, 0
+    else:
+        patch += 1
+
+    new_version = f"{major}.{minor}.{patch}"
+    plugin["version"] = new_version
+    mp.write_text(json.dumps(data, indent=2) + "\n")
+    print(json.dumps({"old": old_version, "new": new_version}))
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -1068,6 +1097,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     gvc = sub.add_parser("generate-verify-commands", help="Output verify/e2e commands from config.")
     gvc.set_defaults(func=cmd_generate_verify_commands)
+
+    bv = sub.add_parser("bump-version", help="Bump plugin version in marketplace.json.")
+    bv.add_argument("--bump", default="patch", choices=["patch", "minor", "major"],
+                    help="Version component to bump (default: patch).")
+    bv.set_defaults(func=cmd_bump_version)
 
     return p
 

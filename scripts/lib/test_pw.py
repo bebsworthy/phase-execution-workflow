@@ -1184,3 +1184,69 @@ class TestValidateConfig:
         code, out = _run(repo, "validate-config")
         result = json.loads(out)
         assert any("stack.description" in w for w in result["warnings"])
+
+
+# ---------------------------------------------------------------------------
+# TestBumpVersion
+# ---------------------------------------------------------------------------
+
+class TestBumpVersion:
+    @pytest.fixture
+    def plugin_repo(self, tmp_path: Path) -> Path:
+        """Create a minimal repo with marketplace.json."""
+        mp_dir = tmp_path / ".claude-plugin"
+        mp_dir.mkdir()
+        mp = mp_dir / "marketplace.json"
+        mp.write_text(json.dumps({
+            "name": "test",
+            "plugins": [{"name": "test", "version": "2.5.3"}]
+        }, indent=2) + "\n")
+        return tmp_path
+
+    def test_bump_patch(self, plugin_repo: Path, monkeypatch):
+        monkeypatch.setattr(pw, "__file__", str(plugin_repo / "scripts" / "lib" / "pw.py"))
+        parser = pw.build_parser()
+        args = parser.parse_args(["bump-version"])
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = args.func(args)
+        assert code == 0
+        result = json.loads(buf.getvalue())
+        assert result == {"old": "2.5.3", "new": "2.5.4"}
+
+    def test_bump_minor(self, plugin_repo: Path, monkeypatch):
+        monkeypatch.setattr(pw, "__file__", str(plugin_repo / "scripts" / "lib" / "pw.py"))
+        parser = pw.build_parser()
+        args = parser.parse_args(["bump-version", "--bump", "minor"])
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = args.func(args)
+        assert code == 0
+        result = json.loads(buf.getvalue())
+        assert result == {"old": "2.5.3", "new": "2.6.0"}
+
+    def test_bump_major(self, plugin_repo: Path, monkeypatch):
+        monkeypatch.setattr(pw, "__file__", str(plugin_repo / "scripts" / "lib" / "pw.py"))
+        parser = pw.build_parser()
+        args = parser.parse_args(["bump-version", "--bump", "major"])
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = args.func(args)
+        assert code == 0
+        result = json.loads(buf.getvalue())
+        assert result == {"old": "2.5.3", "new": "3.0.0"}
+
+    def test_file_updated(self, plugin_repo: Path, monkeypatch):
+        monkeypatch.setattr(pw, "__file__", str(plugin_repo / "scripts" / "lib" / "pw.py"))
+        parser = pw.build_parser()
+        args = parser.parse_args(["bump-version"])
+        import io, contextlib
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            args.func(args)
+        mp = plugin_repo / ".claude-plugin" / "marketplace.json"
+        data = json.loads(mp.read_text())
+        assert data["plugins"][0]["version"] == "2.5.4"
