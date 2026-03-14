@@ -64,13 +64,13 @@ The main workflow engine. Runs the 7-step loop (IDEAS → BRD → RESEARCH → S
 
 Explores your repo, detects tech stack and verification commands, and writes `pew.yaml` after confirmation. Run again to update config when your project changes.
 
-### `/vibe` — Vibe Mode (Build First)
+### `/pew-vibe` — Vibe Mode (Build First)
 
 Inverts the pew-build flow: implement changes following user instructions, record each decision to a running log, then synthesize BRD/SPEC post-hoc before running the full CHECK/CLOSE quality gate. Supports decimal phase numbering (7.5) for inserting between existing phases.
 
 Use when user testing reveals adjustments, quick iterations are needed, or the plan didn't survive contact with reality.
 
-### `/ux-audit` — UX/UI Audit
+### `/pew-ux-audit` — UX/UI Audit
 
 Standalone 5-phase UX/UI audit that runs independently of the build workflow. Spawns 5 sequential specialist agents (`ux-audit-*`) that trace every finding back to a user goal:
 
@@ -82,7 +82,7 @@ Standalone 5-phase UX/UI audit that runs independently of the build workflow. Sp
 
 Output: ``{config.paths.audit_ux}/`` directory with per-phase reports and a synthesized playbook.
 
-### `/test-audit` — Test Suite Quality Audit
+### `/pew-test-audit` — Test Suite Quality Audit
 
 Standalone 5-phase audit targeting systemic quality issues in LLM-generated test suites. Spawns 10 specialist agents (`test-audit-*`) across 5 phases — Phase 2 runs 6 agents in parallel for speed:
 
@@ -98,7 +98,7 @@ Output: ``{config.paths.audit_test}/`` directory with per-phase reports and a sy
 
 | Component              | Description                                                                                                                                                                                                                     |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **5 skills + 4 commands** | Skills: `/pew-build` (build workflow), `/pew-init` (project setup), `/pew-vibe` (vibe mode framework), `/pew-ux-audit` (UX audit framework), `/pew-test-audit` (test audit framework). Commands: `/vibe` (start vibe phase), `/ux-audit` (run UX audit), `/test-audit` (run test audit), `/audit-to-phases` (convert findings to phases) |
+| **5 skills + 4 commands** | Skills: `/pew-build`, `/pew-init`, `/pew-vibe`, `/pew-ux-audit`, `/pew-test-audit`. Commands: `/pew-vibe` (start vibe phase), `/pew-ux-audit` (run UX audit), `/pew-test-audit` (run test audit), `/pew-audit-to-phases` (convert findings to phases) |
 | **34 agents**          | Step writers (5): ideas, BRD, research, spec, plan. Research (3): feature benchmarker, UX researcher, UX designer. Build (2): frontend/backend developers. Vibe (1): vibe synthesizer. Council (6): security, architecture, testing, test-quality, frontend, backend. Verification (2): alignment checker, product reviewer. UX audit (5): goals, impl, research, eval, proposals. Test audit (10): inventory, tautological, mocking, framework, coverage, maintainability, flaky, synthesis, remediation, architecture. See [agents/README.md](agents/README.md) |
 | **Review profiles**    | Composable tech best practices (fundamental, TypeScript, React, NestJS, TanStack, Tailwind, SPA, REST API, PostgreSQL) — auto-detected and injected                                                                             |
 | **Templates**          | Reference templates for IDEAS, BRD, RESEARCH, SPEC, PLAN, DECISIONS (vibe mode), RETRO artifacts                                                                                                                                                              |
@@ -143,10 +143,10 @@ Not every change needs the full 7-step loop. Use `--size` when adding phases:
   check phase <N>              # run CHECK/CLOSE
   status phase <N>             # show progress
 
-/vibe                           # start a vibe phase (build first, document post-hoc)
-/ux-audit                      # run full 5-phase UX/UI audit
-/test-audit                    # run 10-agent test suite quality audit
-/audit-to-phases               # convert audit findings into PEW phases
+/pew-vibe                       # start a vibe phase (build first, document post-hoc)
+/pew-ux-audit                  # run full 5-phase UX/UI audit
+/pew-test-audit                # run 10-agent test suite quality audit
+/pew-audit-to-phases           # convert audit findings into PEW phases
 ```
 
 ## Requirements

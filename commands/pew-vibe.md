@@ -1,5 +1,5 @@
 ---
-name: vibe
+name: pew-vibe
 description: Start or continue a vibe phase — build first, document post-hoc, then full CHECK/CLOSE
 allowed-tools: Agent, Read, Write, Edit, Bash, Glob, Grep
 ---

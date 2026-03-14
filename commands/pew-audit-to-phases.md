@@ -1,5 +1,5 @@
 ---
-name: audit-to-phases
+name: pew-audit-to-phases
 description: Convert audit report findings into actionable PEW phases. Works with both test-audit and ux-audit reports.
 allowed-tools: Agent, Read, Write, Bash, Glob
 ---
