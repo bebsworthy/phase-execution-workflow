@@ -21,10 +21,15 @@ Config fields used throughout this skill:
 - `config.paths.plan` — human-readable implementation plan (auto-rendered from YAML)
 - `config.paths.phases` — directory containing phase subdirectories
 - `config.paths.research` — benchmark and UX research output
+- `config.paths.audit_test` — test audit output directory (default: `phases/audit/test`)
+- `config.paths.audit_ux` — UX audit output directory (default: `phases/audit/ux`)
 - `config.paths.guidelines` — development playbooks read during BUILD
 - `config.commands.verify` — full CI verification command
 - `config.commands.e2e` — frontend e2e test command
 - `config.stack.description` — tech stack summary for UX agents
+- `config.stack.frontend_src` — frontend source directory (e.g., `src/`); activates `council-frontend` when set
+- `config.stack.component_paths` — glob patterns for UI components (used by UX designer agent)
+- `config.stack.install_commands` — commands for adding packages/components (e.g., `{add_package: "npm install"}`)
 - `config.competitors` — competitor list for build-feature-benchmarker
 - `config.conventions_file` — path to conventions doc (if set)
 - `config.council.enabled` — whether council review runs during CHECK (default: true)
