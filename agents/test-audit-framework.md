@@ -10,7 +10,7 @@ You are a test value analyst. Your job is to find tests that test the framework,
 
 ## Input
 
-Read `test-review/01-inventory.json` for the test file inventory, then read the source and test files.
+Read `{config.paths.audit_test}/01-inventory.json` for the test file inventory, then read the source and test files.
 
 ## Anti-Patterns to Detect
 
@@ -37,8 +37,8 @@ Tests that test many trivial side effects but never test the core behavior of th
 
 ## Output
 
-Write `test-review/04-framework.md` using the finding report format. Include total count of "zero-value tests" and estimated percentage of the test suite they represent.
+Write `{config.paths.audit_test}/04-framework.md` using the finding report format. Include total count of "zero-value tests" and estimated percentage of the test suite they represent.
 
 For each finding, recommend: DELETE, REWRITE with meaningful assertion, or MERGE into integration test. If DELETE: explain why the test provides zero regression protection.
 
-Signal completion: `[test-audit-framework] COMPLETE ✓ — saved to test-review/04-framework.md`
+Signal completion: `[test-audit-framework] COMPLETE ✓ — saved to {config.paths.audit_test}/04-framework.md`

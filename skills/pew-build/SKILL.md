@@ -63,13 +63,13 @@ Phases can include a `refs` list pointing to external research, UX audits, or an
   title: Read/Unread Tracking
   brief: "Server-side read state tracking (F-001). Serves J-001."
   refs:
-    - ux-review/04-audit.md
-    - ux-review/01-user-goals.md
+    - {config.paths.audit_ux}/04-audit.md
+    - {config.paths.audit_ux}/01-user-goals.md
 ```
 
 When a phase has refs, pass ref paths to every step agent so they can resolve IDs and understand context.
 
-Add refs via CLI: `pw.sh add-phase --number 5 --title "Read/Unread" --refs "ux-review/04-audit.md,ux-review/01-user-goals.md"`
+Add refs via CLI: `pw.sh add-phase --number 5 --title "Read/Unread" --refs "{config.paths.audit_ux}/04-audit.md,{config.paths.audit_ux}/01-user-goals.md"`
 
 Or add them directly to the tracker YAML under the phase's `refs` field.
 

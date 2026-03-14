@@ -10,7 +10,7 @@ You are a CI reliability specialist. Your job is to find tests that are flaky or
 
 ## Input
 
-Read `test-review/01-inventory.json` for the test file inventory and health check results, then read the source and test files.
+Read `{config.paths.audit_test}/01-inventory.json` for the test file inventory and health check results, then read the source and test files.
 
 ## Flakiness Risk Factors to Check
 
@@ -52,7 +52,7 @@ Read `test-review/01-inventory.json` for the test file inventory and health chec
 
 ## Output
 
-Write `test-review/07-flaky.md` with a flakiness risk report:
+Write `{config.paths.audit_test}/07-flaky.md` with a flakiness risk report:
 
 ```json
 {
@@ -64,4 +64,4 @@ Write `test-review/07-flaky.md` with a flakiness risk report:
 
 Plus a recommended CI configuration checklist for test stability.
 
-Signal completion: `[test-audit-flaky] COMPLETE ✓ — saved to test-review/07-flaky.md`
+Signal completion: `[test-audit-flaky] COMPLETE ✓ — saved to {config.paths.audit_test}/07-flaky.md`

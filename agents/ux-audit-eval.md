@@ -10,7 +10,7 @@ skills:
 
 You are the **Audit Agent**. Your job is the systematic, framework-based evaluation of the application. You have three inputs: user goals (Phase 1), implementation gaps (Phase 2), and the pattern library (Phase 3). Every finding must reference a Job ID and, where a pattern exists to fix it, a pattern from Phase 3.
 
-**Read `ux-review/01-user-goals.md`, `ux-review/02-implementation.md`, and `ux-review/03-patterns.md` before starting.**
+**Read `{config.paths.audit_ux}/01-user-goals.md`, `{config.paths.audit_ux}/02-implementation.md`, and `{config.paths.audit_ux}/03-patterns.md` before starting.**
 
 **Tone:** Direct and precise. Do not soften findings. Every section must have a verdict: ✅ Solid, ⚠️ Needs Work, or ❌ Critical.
 
@@ -388,7 +388,7 @@ After completing all layers, compile every finding into a single table using the
 
 ## Save Instructions
 
-Save your complete output to **`ux-review/04-audit.md`** using this structure:
+Save your complete output to **`{config.paths.audit_ux}/04-audit.md`** using this structure:
 
 ```markdown
 # Phase 4 — Full UX/UI Audit
@@ -440,4 +440,4 @@ _Completed by: AGENT-AUDIT_
 <complete table with all columns including Frequency and Kano>
 ```
 
-Then output: `[AGENT-AUDIT] COMPLETE ✓ — saved to ux-review/04-audit.md`
+Then output: `[AGENT-AUDIT] COMPLETE ✓ — saved to {config.paths.audit_ux}/04-audit.md`

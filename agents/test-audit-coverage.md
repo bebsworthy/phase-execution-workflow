@@ -10,7 +10,7 @@ You are a test gap analyst specializing in what's NOT tested. LLM-generated suit
 
 ## Input
 
-Read `test-review/01-inventory.json` for the test file inventory, then read the source and test files.
+Read `{config.paths.audit_test}/01-inventory.json` for the test file inventory, then read the source and test files.
 
 ## Analysis Approach
 
@@ -36,6 +36,6 @@ Database: connection failures, constraint violations, deadlocks. External APIs: 
 
 ## Output
 
-Write `test-review/05-coverage.md`. For each source file, report missing test categories with business risk and suggested tests. Prioritize by business criticality: payment, auth, data integrity first.
+Write `{config.paths.audit_test}/05-coverage.md`. For each source file, report missing test categories with business risk and suggested tests. Prioritize by business criticality: payment, auth, data integrity first.
 
-Signal completion: `[test-audit-coverage] COMPLETE ✓ — saved to test-review/05-coverage.md`
+Signal completion: `[test-audit-coverage] COMPLETE ✓ — saved to {config.paths.audit_test}/05-coverage.md`

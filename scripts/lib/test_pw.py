@@ -201,11 +201,11 @@ class TestAddPhase:
         assert data["phases"][0]["brief"] == "Full-text search across issues"
 
     def test_refs_stored(self, repo: Path):
-        _add_phase(repo, refs="ux-review/04-audit.md,ux-review/01-user-goals.md")
+        _add_phase(repo, refs="phases/audit/ux/04-audit.md,phases/audit/ux/01-user-goals.md")
         data = pw.load_tracker(repo)
         assert data["phases"][0]["refs"] == [
-            "ux-review/04-audit.md",
-            "ux-review/01-user-goals.md",
+            "phases/audit/ux/04-audit.md",
+            "phases/audit/ux/01-user-goals.md",
         ]
 
     def test_refs_default_empty(self, repo: Path):

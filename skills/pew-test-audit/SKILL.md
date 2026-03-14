@@ -134,6 +134,6 @@ Each agent outputs findings in this structure:
 
 ## File-Saving Instructions
 
-1. Write your complete output to your designated file under `test-review/`.
+1. Write your complete output to your designated file under `{config.paths.audit_test}/`.
 2. Do not write to any other agent's file.
-3. Signal completion with: `[test-audit-<name>] COMPLETE ✓ — saved to test-review/<filename>`
+3. Signal completion with: `[test-audit-<name>] COMPLETE ✓ — saved to {config.paths.audit_test}/<filename>`

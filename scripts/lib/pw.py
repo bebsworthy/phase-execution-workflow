@@ -48,6 +48,8 @@ DEFAULT_CONFIG: dict = {
         "plan": "phases/implementation-plan.md",
         "phases": "phases",
         "research": "phases/research",
+        "audit_test": "phases/audit/test",
+        "audit_ux": "phases/audit/ux",
         "guidelines": "",
     },
     "commands": {"verify": "", "e2e": ""},

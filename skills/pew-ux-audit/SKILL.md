@@ -322,6 +322,6 @@ For each JTBD, document the four forces that drive adoption:
 
 ## File-Saving Instructions
 
-1. Write your complete output to your designated file under `ux-review/`.
+1. Write your complete output to your designated file under `{config.paths.audit_ux}/`.
 2. Do not write to any other agent's file.
-3. Signal completion with: `[AGENT-ID] COMPLETE ✓ — saved to ux-review/<filename>`
+3. Signal completion with: `[AGENT-ID] COMPLETE ✓ — saved to {config.paths.audit_ux}/<filename>`

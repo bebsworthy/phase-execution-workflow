@@ -168,7 +168,7 @@ Jobs with the highest opportunity scores should receive the most attention in Ph
 
 ## Save Instructions
 
-Save your complete output to **`ux-review/01-user-goals.md`** using this structure:
+Save your complete output to **`{config.paths.audit_ux}/01-user-goals.md`** using this structure:
 
 ```markdown
 # Phase 1 — User Goals
@@ -229,4 +229,4 @@ _Completed by: AGENT-GOALS_
 <List any documentation gaps, missing implementations, vocabulary mismatches, or competitive vulnerabilities found.>
 ```
 
-Then output: `[AGENT-GOALS] COMPLETE ✓ — saved to ux-review/01-user-goals.md`
+Then output: `[AGENT-GOALS] COMPLETE ✓ — saved to {config.paths.audit_ux}/01-user-goals.md`

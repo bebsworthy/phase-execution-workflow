@@ -41,7 +41,7 @@ Create a structured inventory of every test file:
 
 ## Output
 
-Write `test-review/01-inventory.json`:
+Write `{config.paths.audit_test}/01-inventory.json`:
 
 ```json
 {
@@ -63,4 +63,4 @@ Write `test-review/01-inventory.json`:
 
 Do NOT skip any test file. Be exhaustive.
 
-Signal completion: `[test-audit-inventory] COMPLETE ✓ — saved to test-review/01-inventory.json`
+Signal completion: `[test-audit-inventory] COMPLETE ✓ — saved to {config.paths.audit_test}/01-inventory.json`

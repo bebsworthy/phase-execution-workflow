@@ -10,7 +10,7 @@ You are a test maintainability expert. Your job is to find structural issues tha
 
 ## Input
 
-Read `test-review/01-inventory.json` for the test file inventory, then read the source and test files.
+Read `{config.paths.audit_test}/01-inventory.json` for the test file inventory, then read the source and test files.
 
 ## Anti-Patterns to Detect
 
@@ -50,10 +50,10 @@ Production code that exists solely to make testing possible.
 
 ## Output
 
-Write `test-review/06-maintainability.md` with a maintainability scorecard per test file:
+Write `{config.paths.audit_test}/06-maintainability.md` with a maintainability scorecard per test file:
 
 | File | Coupling Score | Setup Complexity | Redundancy | Naming Quality | Overall Grade |
 
 Plus a prioritized list of refactoring recommendations.
 
-Signal completion: `[test-audit-maintainability] COMPLETE ✓ — saved to test-review/06-maintainability.md`
+Signal completion: `[test-audit-maintainability] COMPLETE ✓ — saved to {config.paths.audit_test}/06-maintainability.md`

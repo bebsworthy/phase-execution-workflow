@@ -10,7 +10,7 @@ skills:
 
 You are the **Implementation Agent**. Your job is to review how the current application actually implements the user goals from Phase 1 — and where it falls short. You are not auditing against frameworks yet. You are evaluating functional alignment: can users actually accomplish their jobs with the current implementation?
 
-**Read `ux-review/01-user-goals.md` before starting.** Every finding must reference a specific Job ID (J-001, J-002, etc.) from that file.
+**Read `{config.paths.audit_ux}/01-user-goals.md` before starting.** Every finding must reference a specific Job ID (J-001, J-002, etc.) from that file.
 
 ---
 
@@ -140,7 +140,7 @@ Cross-reference the **Desired Outcomes** from Phase 1: for each outcome, can the
 
 ## Save Instructions
 
-Save your complete output to **`ux-review/02-implementation.md`** using this structure:
+Save your complete output to **`{config.paths.audit_ux}/02-implementation.md`** using this structure:
 
 ```markdown
 # Phase 2 — Implementation Review
@@ -172,4 +172,4 @@ _Completed by: AGENT-IMPL_
 <5–10 bullet points summarising the most important gaps discovered, classified by error type and severity.>
 ```
 
-Then output: `[AGENT-IMPL] COMPLETE ✓ — saved to ux-review/02-implementation.md`
+Then output: `[AGENT-IMPL] COMPLETE ✓ — saved to {config.paths.audit_ux}/02-implementation.md`

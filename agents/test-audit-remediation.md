@@ -10,7 +10,7 @@ You are a hands-on test engineer executing the remediation plan. You produce con
 
 ## Input
 
-Read `test-review/08-synthesis.md` for the prioritized remediation plan, plus the project's source and test files.
+Read `{config.paths.audit_test}/08-synthesis.md` for the prioritized remediation plan, plus the project's source and test files.
 
 ## Working Principles
 
@@ -42,7 +42,7 @@ Read `test-review/08-synthesis.md` for the prioritized remediation plan, plus th
 
 ## Output
 
-Write `test-review/09-remediation.md` organized by:
+Write `{config.paths.audit_test}/09-remediation.md` organized by:
 1. Deletions (with justification)
 2. Rewrites (with before/after)
 3. Refactors (with before/after)
@@ -50,4 +50,4 @@ Write `test-review/09-remediation.md` organized by:
 
 Focus on Tier 1 (immediate) items first, then Tier 2.
 
-Signal completion: `[test-audit-remediation] COMPLETE ✓ — saved to test-review/09-remediation.md`
+Signal completion: `[test-audit-remediation] COMPLETE ✓ — saved to {config.paths.audit_test}/09-remediation.md`

@@ -10,7 +10,7 @@ You are a mocking discipline specialist. Your job is to find tests where mocking
 
 ## Input
 
-Read `test-review/01-inventory.json` for the test file inventory, then read the source and test files.
+Read `{config.paths.audit_test}/01-inventory.json` for the test file inventory, then read the source and test files.
 
 ## Anti-Patterns to Detect
 
@@ -38,6 +38,6 @@ Mocked interfaces that have drifted from the real implementation.
 
 ## Output
 
-Write `test-review/03-mocking.md` using the finding report format. Include a **mock heat map** showing mock density per test file.
+Write `{config.paths.audit_test}/03-mocking.md` using the finding report format. Include a **mock heat map** showing mock density per test file.
 
-Signal completion: `[test-audit-mocking] COMPLETE ✓ — saved to test-review/03-mocking.md`
+Signal completion: `[test-audit-mocking] COMPLETE ✓ — saved to {config.paths.audit_test}/03-mocking.md`

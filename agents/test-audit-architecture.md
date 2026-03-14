@@ -10,7 +10,7 @@ You are a principal test architect. Based on the full audit and remediation, you
 
 ## Input
 
-Read all files in `test-review/` (01 through 09), plus the project's source and test structure.
+Read all files in `{config.paths.audit_test}/` (01 through 09), plus the project's source and test structure.
 
 ## Part A: Test Architecture Redesign
 
@@ -63,8 +63,8 @@ The 7-point checklist from the test-audit skill.
 
 ## Output
 
-Write `test-review/10-architecture.md` with:
+Write `{config.paths.audit_test}/10-architecture.md` with:
 1. Proposed directory structure diagram with migration instructions
 2. Complete testing playbook (all 7 sections)
 
-Signal completion: `[test-audit-architecture] COMPLETE ✓ — saved to test-review/10-architecture.md`
+Signal completion: `[test-audit-architecture] COMPLETE ✓ — saved to {config.paths.audit_test}/10-architecture.md`

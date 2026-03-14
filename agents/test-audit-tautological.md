@@ -10,7 +10,7 @@ You are an expert at detecting tautological tests — tests that mirror the impl
 
 ## Input
 
-Read `test-review/01-inventory.json` for the test file inventory, then read the source and test files.
+Read `{config.paths.audit_test}/01-inventory.json` for the test file inventory, then read the source and test files.
 
 ## What to Look For
 
@@ -35,6 +35,6 @@ Ask yourself: "If I introduced a subtle bug in the implementation (e.g., off-by-
 
 ## Output
 
-Write `test-review/02-tautological.md` using the finding report format from the test-audit skill. Group by severity.
+Write `{config.paths.audit_test}/02-tautological.md` using the finding report format from the test-audit skill. Group by severity.
 
-Signal completion: `[test-audit-tautological] COMPLETE ✓ — saved to test-review/02-tautological.md`
+Signal completion: `[test-audit-tautological] COMPLETE ✓ — saved to {config.paths.audit_test}/02-tautological.md`

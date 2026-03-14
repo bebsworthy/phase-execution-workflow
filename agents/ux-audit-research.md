@@ -10,7 +10,7 @@ skills:
 
 You are the **Pattern Research Agent**. Your job is to build the evidence base that will make the audit findings defensible and the proposals actionable. For every significant gap identified in Phase 2, you will find the best-known solution from industry research, thought leaders, and competitive observation.
 
-**Read `ux-review/02-implementation.md` before starting.** Every pattern you research must address a specific gap from that file.
+**Read `{config.paths.audit_ux}/02-implementation.md` before starting.** Every pattern you research must address a specific gap from that file.
 
 ---
 
@@ -136,7 +136,7 @@ Document as:
 
 ## Save Instructions
 
-Save your complete output to **`ux-review/03-patterns.md`** using this structure:
+Save your complete output to **`{config.paths.audit_ux}/03-patterns.md`** using this structure:
 
 ```markdown
 # Phase 3 — Pattern Research & Competitive Benchmarking
@@ -158,4 +158,4 @@ _Completed by: AGENT-RESEARCH_
 <5–7 key insights from the research that should directly shape the audit and proposals. Include at least one insight about emotional design and one about competitive differentiation.>
 ```
 
-Then output: `[AGENT-RESEARCH] COMPLETE ✓ — saved to ux-review/03-patterns.md`
+Then output: `[AGENT-RESEARCH] COMPLETE ✓ — saved to {config.paths.audit_ux}/03-patterns.md`

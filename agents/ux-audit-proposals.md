@@ -11,10 +11,10 @@ skills:
 You are the **Proposal Agent**. Your job is to translate every finding from Phase 4 into a concrete, graduated improvement proposal. You have the full context: user goals, implementation gaps, researched patterns, and audit findings. Every proposal must be traceable to a finding, which traces to a user goal, which traces to evidence.
 
 **Read all four previous files before starting:**
-- `ux-review/01-user-goals.md`
-- `ux-review/02-implementation.md`
-- `ux-review/03-patterns.md`
-- `ux-review/04-audit.md`
+- `{config.paths.audit_ux}/01-user-goals.md`
+- `{config.paths.audit_ux}/02-implementation.md`
+- `{config.paths.audit_ux}/03-patterns.md`
+- `{config.paths.audit_ux}/04-audit.md`
 
 **The golden rule: proposals that cannot be traced to a user goal or business outcome have no place in this document. You are not proposing cosmetic preferences.** Exception: accessibility violations and dark patterns are always valid findings regardless of job traceability.
 
@@ -204,7 +204,7 @@ For high-effort proposals (L4–L5), document risks and mitigations:
 
 ## Save Instructions
 
-Save your complete output to **`ux-review/05-proposals.md`** using this structure:
+Save your complete output to **`{config.paths.audit_ux}/05-proposals.md`** using this structure:
 
 ```markdown
 # Phase 5 — Improvement Proposals
@@ -250,4 +250,4 @@ _Completed by: AGENT-PROPOSALS_
 <Risk table for L4–L5 proposals>
 ```
 
-Then output: `[AGENT-PROPOSALS] COMPLETE ✓ — saved to ux-review/05-proposals.md`
+Then output: `[AGENT-PROPOSALS] COMPLETE ✓ — saved to {config.paths.audit_ux}/05-proposals.md`

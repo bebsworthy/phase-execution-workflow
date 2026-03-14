@@ -176,7 +176,7 @@ The only channel from parent to subagent is the Agent tool's prompt string. Incl
 # GOOD — agent has all paths and context
 "You are writing BRD.md for Phase 3 (Search Filtering).
 Read IDEAS.md at phases/phase-3-search-filtering/IDEAS.md.
-Read refs: ux-review/04-audit.md, ux-review/01-user-goals.md.
+Read refs: {config.paths.audit_ux}/04-audit.md, {config.paths.audit_ux}/01-user-goals.md.
 Read conventions at CONVENTIONS.md.
 Write output to phases/phase-3-search-filtering/BRD.md.
 Use template at ${CLAUDE_PLUGIN_ROOT}/templates/BRD.template.md for format reference."

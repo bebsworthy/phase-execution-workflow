@@ -74,7 +74,7 @@ Standalone 5-phase UX/UI audit that runs independently of the build workflow. Sp
 4. **Audit** — 12-layer evaluation (IA, onboarding, task flows, Nielsen heuristics, cognitive science, visual design, accessibility WCAG 2.2 AA, emotional design, content quality, trust, delight, dark patterns, design system maturity)
 5. **Proposals** — Graduated improvements (L1–L5) with Kano classification, phased roadmap, code skeletons, and success metrics
 
-Output: `ux-review/` directory with per-phase reports and a synthesized playbook.
+Output: ``{config.paths.audit_ux}/`` directory with per-phase reports and a synthesized playbook.
 
 ### `/test-audit` — Test Suite Quality Audit
 
@@ -86,7 +86,7 @@ Standalone 5-phase audit targeting systemic quality issues in LLM-generated test
 4. **Remediation** — Concrete code fixes with before/after examples for highest-impact issues
 5. **Architecture** — Test directory redesign, testing playbook, CI configuration, LLM agent instructions
 
-Output: `test-review/` directory with per-phase reports and a synthesized playbook.
+Output: ``{config.paths.audit_test}/`` directory with per-phase reports and a synthesized playbook.
 
 ## What's included
 

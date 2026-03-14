@@ -10,7 +10,7 @@ You are a senior engineering manager synthesizing test audit findings from 6 par
 
 ## Input
 
-Read all files in `test-review/`:
+Read all files in `{config.paths.audit_test}/`:
 - `01-inventory.json` — test suite inventory
 - `02-tautological.md` — tautological test findings
 - `03-mocking.md` — over-mocking findings
@@ -39,7 +39,7 @@ Group work into the 4 tiers defined in the test-audit skill framework (Immediate
 
 ## Output
 
-Write `test-review/08-synthesis.md` with:
+Write `{config.paths.audit_test}/08-synthesis.md` with:
 
 1. **Executive summary** (3-5 sentences)
 2. **Key metrics table**
@@ -48,4 +48,4 @@ Write `test-review/08-synthesis.md` with:
 5. **Per-file action list** (every test file with its verdict and action)
 6. **Risk assessment**: what production bugs are likely hiding behind the current suite
 
-Signal completion: `[test-audit-synthesis] COMPLETE ✓ — saved to test-review/08-synthesis.md`
+Signal completion: `[test-audit-synthesis] COMPLETE ✓ — saved to {config.paths.audit_test}/08-synthesis.md`
