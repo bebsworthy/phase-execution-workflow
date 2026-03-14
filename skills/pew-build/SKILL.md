@@ -116,7 +116,7 @@ Each agent receives: phase context (number, title, tags, brief), file paths to r
 | `build-ideas-writer` | Phase brief, refs, retro path, benchmark doc paths, conventions | `{phase-dir}/IDEAS.md` |
 
 1. `pw.sh set-step-status --phase N --step ideas --status in_progress`
-2. Unless `skip research` flag: spawn `build-feature-benchmarker` with phase brief, title, tags, config (competitors, research path). Wait for completion. Note output file path.
+2. Unless `skip research` flag: spawn `build-feature-benchmarker` with phase brief, title, tags, list of existing files in `{config.paths.research}/`, research log path (`{config.paths.research}/research-log.md`). Config (competitors, research path) is auto-injected via hook. Wait for completion. Note output file path.
 3. Spawn `build-ideas-writer` with: phase brief, title, tags, refs paths, previous RETRO.md path (if exists), benchmark doc paths (from step 2), conventions file path, template path. Wait for completion.
 4. **Validate**: `{phase-dir}/IDEAS.md` exists and is non-empty
 5. If agent reported open questions: present them via `AskUserQuestion`, then re-spawn agent with answers
@@ -148,8 +148,8 @@ Each agent receives: phase context (number, title, tags, brief), file paths to r
 1. `pw.sh set-step-status --phase N --step research --status in_progress`
 2. If phase has `frontend` tag and size is `large`:
    a. Spawn `build-ux-researcher` with BRD.md path, phase context, config (stack, research path). Wait for completion. Note output file path.
-   b. Spawn `build-ux-designer` with BRD.md path, UX research output path, config (stack, component paths). Wait for completion.
-3. Spawn `build-research-writer` with: BRD.md path, refs paths, UX research doc paths (if any), architecture-reference.md path, conventions file path, phase tags, template path. Wait for completion.
+   b. Spawn `build-ux-designer` with BRD.md path, UX research output path, phase context (number, title, tags). Config (stack, component paths) is auto-injected via hook. Wait for completion.
+3. Spawn `build-research-writer` with: BRD.md path, refs paths, UX research doc paths (if any), DESIGN.md path (if exists), architecture-reference.md path, conventions file path, phase tags, template path. Wait for completion.
 4. **Validate**: `{phase-dir}/RESEARCH.md` exists and is non-empty
 5. If agent reported open questions: present via `AskUserQuestion`, re-spawn with answers
 6. Atomic commit
@@ -245,7 +245,7 @@ This step stays with the orchestrator — it is coordination work (dispatching e
 
 - Run `{config.commands.verify}` (lint + typecheck + test:all); for frontend phases also run `{config.commands.e2e}`
 - Code quality check: review test files for empty assertions, `.toBeDefined()`-only tests, mocking the subject under test
-- Spawn `build-alignment-checker`: verify each FC-nnn has implementation, each T-nnn has test
+- Spawn `build-alignment-checker` with: SPEC.md path, BRD.md path, phase-diff file list, conventions file path (if configured). Verify each FC-nnn has implementation, each T-nnn has test.
 - If phase has `frontend` tag and `config.product_review.enabled` is true: spawn `build-product-reviewer` with BRD.md path, `config.product_review.app_url`, `config.product_review.start_command`. If browser tools unavailable, skip with warning.
 - Classify each issue by severity: P1 (Critical), P2 (Important), P3 (Minor)
 - Collect all issues (council + verify) into single list: `council | lint | type | test | quality | alignment | docs` × `P1 | P2 | P3`

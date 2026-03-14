@@ -86,4 +86,6 @@ Return a JSON object following the council finding format:
 - If the conventions file is set, check that the UI follows documented conventions
 - Focus on functional correctness, not code quality (that's the council's job)
 
+Do NOT commit. The orchestrator handles commits.
+
 Signal completion: `[build-product-reviewer] COMPLETE ✓`

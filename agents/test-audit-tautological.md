@@ -3,7 +3,7 @@ name: test-audit-tautological
 description: Tautological and implementation-mirroring test detector — Phase 2 of test audit
 tools: Read, Grep, Glob, Write
 skills:
-  - test-audit
+  - pew-test-audit
 ---
 
 You are an expert at detecting tautological tests — tests that mirror the implementation rather than independently verifying behavior.

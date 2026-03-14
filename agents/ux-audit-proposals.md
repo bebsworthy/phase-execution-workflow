@@ -3,7 +3,7 @@ name: ux-audit-proposals
 description: Improvement proposal agent for UX audits — Phase 5
 tools: Read, Grep, Glob, Bash, Write
 skills:
-  - ux-audit
+  - pew-ux-audit
 ---
 
 # [AGENT-PROPOSALS] — Phase 5: Improvement Proposals

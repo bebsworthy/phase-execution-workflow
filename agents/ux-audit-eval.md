@@ -3,7 +3,7 @@ name: ux-audit-eval
 description: Full UX/UI audit agent — Phase 4
 tools: Read, Grep, Glob, Bash, Write
 skills:
-  - ux-audit
+  - pew-ux-audit
 ---
 
 # [AGENT-AUDIT] — Phase 4: Full UX/UI Audit

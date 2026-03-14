@@ -3,7 +3,7 @@ name: ux-audit-research
 description: Pattern research and competitive benchmarking agent for UX audits — Phase 3
 tools: Read, Grep, Glob, Bash, Write, WebFetch, WebSearch
 skills:
-  - ux-audit
+  - pew-ux-audit
 ---
 
 # [AGENT-RESEARCH] — Phase 3: Pattern Research & Competitive Benchmarking

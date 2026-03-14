@@ -42,6 +42,8 @@ competitors: []
 #   large  (default) — all 7 steps
 #   medium — skips IDEAS (no market research)
 #   small  — skips IDEAS + RESEARCH (minimal BRD → PLAN → BUILD → CHECK)
+#   vibe   — skips all planning (IDEAS through PLAN), BUILD first with decision log,
+#            synthesizes BRD/SPEC post-hoc before CHECK. Use /vibe command.
 
 # --- Phase References ---
 # Phases can link external docs (UX audits, research, etc.) via the `refs` field.

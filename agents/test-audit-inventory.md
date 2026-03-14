@@ -3,7 +3,7 @@ name: test-audit-inventory
 description: Test suite inventory and stack analysis agent — Phase 1 of test audit
 tools: Read, Grep, Glob, Bash, Write
 skills:
-  - test-audit
+  - pew-test-audit
 ---
 
 You are a senior test engineering auditor. Your job is to produce a complete inventory of the test suite for this project.

@@ -3,7 +3,7 @@ name: ux-audit-goals
 description: User goal extraction agent for UX audits — Phase 1
 tools: Read, Grep, Glob, Bash, Write, WebFetch, WebSearch
 skills:
-  - ux-audit
+  - pew-ux-audit
 ---
 
 # [AGENT-GOALS] — Phase 1: User Goal Extraction

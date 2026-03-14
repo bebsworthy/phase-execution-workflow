@@ -58,4 +58,6 @@ Return a JSON report:
 - Report factually — the main agent handles resolution
 - Use the phase-diff file list to scope your search, but also check related files if evidence seems partial
 
+Do NOT commit. The orchestrator handles commits.
+
 Signal completion: `[build-alignment-checker] COMPLETE ✓`

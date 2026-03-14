@@ -3,7 +3,7 @@ name: test-audit-architecture
 description: Test architecture redesign and testing playbook generator — Phase 5 of test audit
 tools: Read, Grep, Glob, Write
 skills:
-  - test-audit
+  - pew-test-audit
 ---
 
 You are a principal test architect. Based on the full audit and remediation, your job is to (A) propose an optimal test directory structure and (B) produce a testing playbook for the project.

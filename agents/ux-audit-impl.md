@@ -3,7 +3,7 @@ name: ux-audit-impl
 description: Implementation review agent for UX audits — Phase 2
 tools: Read, Grep, Glob, Bash, Write
 skills:
-  - ux-audit
+  - pew-ux-audit
 ---
 
 # [AGENT-IMPL] — Phase 2: Implementation Review

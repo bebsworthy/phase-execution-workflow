@@ -3,7 +3,7 @@ name: test-audit-framework
 description: Framework testing and trivial test detector — Phase 2 of test audit
 tools: Read, Grep, Glob, Write
 skills:
-  - test-audit
+  - pew-test-audit
 ---
 
 You are a test value analyst. Your job is to find tests that test the framework, the language runtime, or trivially obvious behavior rather than application logic.
