@@ -102,3 +102,5 @@ Return a JSON object:
 - Every finding must describe the **concrete attack vector**, not just "this is insecure"
 - Findings must be actionable — if you can't describe how to fix it, don't report it
 - Do not flag theoretical vulnerabilities that require preconditions the application doesn't meet
+
+Signal completion: `[council-security] COMPLETE ✓`

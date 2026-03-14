@@ -101,3 +101,5 @@ Return a JSON object:
 - Respect conventions — do not flag accepted patterns
 - Focus on strategy (what to test), not implementation (how tests are written)
 - Prioritize missing coverage for BRD/SPEC items over general coverage gaps
+
+Signal completion: `[council-testing] COMPLETE ✓`

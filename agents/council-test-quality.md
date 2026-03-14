@@ -105,3 +105,5 @@ Return a JSON object:
 - Focus on implementation quality (how), not coverage strategy (what)
 - Do not flag missing test coverage or coverage gaps — that is council-testing's domain. Only flag quality issues in tests that exist.
 - Prioritize P1 findings (false confidence) over P3 style issues
+
+Signal completion: `[council-test-quality] COMPLETE ✓`

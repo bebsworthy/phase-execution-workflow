@@ -106,3 +106,5 @@ Return a JSON object:
 - Prioritize accessibility (P1) over style preferences (P3)
 - Reference the project's UI component library (from `config.stack.description`) when suggesting fixes
 - Do not prescribe specific component libraries — work with what the project uses
+
+Signal completion: `[council-frontend] COMPLETE ✓`

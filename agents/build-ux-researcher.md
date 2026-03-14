@@ -144,3 +144,7 @@ tags: [<phase tags>]
 - Prefer reusable domain names so future tasks update the same research document.
 - If the file exists, update it in place; keep structure stable; refresh outdated sections.
 - If the file does not exist, create it from the template above.
+
+Do NOT commit. The orchestrator handles commits.
+
+Signal completion: `[build-ux-researcher] COMPLETE ✓ — saved to {config.paths.research}/ux-<theme>.md`

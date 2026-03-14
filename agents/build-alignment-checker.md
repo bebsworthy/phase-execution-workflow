@@ -57,3 +57,5 @@ Return a JSON report:
 - A test marked `descoped` in SPEC is acceptable if rationale exists
 - Report factually — the main agent handles resolution
 - Use the phase-diff file list to scope your search, but also check related files if evidence seems partial
+
+Signal completion: `[build-alignment-checker] COMPLETE ✓`

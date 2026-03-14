@@ -92,3 +92,7 @@ MARKET RESEARCH: <topic>
 - Check research log before visiting URLs — skip recently visited sources
 - Max 30 items in the brief returned to main agent
 - Benchmark file in `{config.paths.research}/` can be longer and more detailed
+
+Do NOT commit. The orchestrator handles commits.
+
+Signal completion: `[build-feature-benchmarker] COMPLETE ✓ — saved to {config.paths.research}/benchmark-<topic>.md`

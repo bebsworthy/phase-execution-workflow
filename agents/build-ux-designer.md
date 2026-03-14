@@ -157,3 +157,7 @@ Sourcing priority: (1) Already in codebase → (2) UI library block/component �
 - Every design choice must reference either a BRD requirement or a UX research principle
 - Do not duplicate UX research content — reference it by section
 - Focus on WHAT the user sees and does, not HOW to build it (that's the SPEC's job)
+
+Do NOT commit. The orchestrator handles commits.
+
+Signal completion: `[build-ux-designer] COMPLETE ✓ — saved to {phase-dir}/DESIGN.md`

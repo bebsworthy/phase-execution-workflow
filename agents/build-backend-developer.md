@@ -80,3 +80,7 @@ Report task completion with:
 - Tests added (T-nnn references)
 - Any issues encountered and how they were resolved
 - Verification results (build, typecheck, lint, tests)
+
+Do NOT commit. The orchestrator handles commits.
+
+Signal completion: `[build-backend-developer] COMPLETE ✓`

@@ -107,3 +107,5 @@ Return a JSON object:
 - Every finding must answer "will this slow us down?" — not "is this clean?"
 - Do not flag working code that is unlikely to change
 - Prefer fewer, higher-impact findings over exhaustive nit-picking
+
+Signal completion: `[council-architecture] COMPLETE ✓`

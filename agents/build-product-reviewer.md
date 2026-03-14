@@ -85,3 +85,5 @@ Return a JSON object following the council finding format:
 - Report factually — describe what you observed, not what you assume the code does
 - If the conventions file is set, check that the UI follows documented conventions
 - Focus on functional correctness, not code quality (that's the council's job)
+
+Signal completion: `[build-product-reviewer] COMPLETE ✓`

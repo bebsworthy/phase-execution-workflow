@@ -105,3 +105,5 @@ Return a JSON object:
 - Every finding must describe concrete production impact, not theoretical concerns
 - Do not flag framework-handled concerns (e.g., connection pooling managed by the framework's DI)
 - Do not prescribe specific frameworks or libraries — work with what the project uses
+
+Signal completion: `[council-backend] COMPLETE ✓`
