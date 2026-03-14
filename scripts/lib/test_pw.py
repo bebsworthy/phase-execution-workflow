@@ -58,11 +58,12 @@ def _run(repo: Path, *cli_args: str) -> tuple[int, str]:
     return code, buf.getvalue()
 
 
-def _add_phase(repo: Path, number: int = 24, title: str = "Search",
+def _add_phase(repo: Path, number: int | float = 24, title: str = "Search",
                tags: str | None = "frontend,backend",
                depends_on: str | None = None,
                brief: str | None = "Add search",
-               refs: str | None = None) -> int:
+               refs: str | None = None,
+               size: str | None = None) -> int:
     """Helper to add a phase."""
     cli = ["add-phase", "--number", str(number), "--title", title]
     if tags:
@@ -73,6 +74,8 @@ def _add_phase(repo: Path, number: int = 24, title: str = "Search",
         cli += ["--brief", brief]
     if refs:
         cli += ["--refs", refs]
+    if size:
+        cli += ["--size", size]
     code, _ = _run(repo, *cli)
     return code
 
@@ -1255,3 +1258,92 @@ class TestBumpVersion:
         assert json.loads(pj.read_text())["version"] == "2.5.4"
         mp = plugin_repo / ".claude-plugin" / "marketplace.json"
         assert json.loads(mp.read_text())["plugins"][0]["version"] == "2.5.4"
+
+
+# ---------------------------------------------------------------------------
+# TestVibeMode
+# ---------------------------------------------------------------------------
+
+class TestVibeMode:
+    def test_vibe_size_skips_planning_steps(self, repo: Path):
+        _add_phase(repo, size="vibe")
+        data = pw.load_tracker(repo)
+        steps = data["phases"][0]["steps"]
+        assert steps["ideas"] == "skipped"
+        assert steps["brd"] == "skipped"
+        assert steps["research"] == "skipped"
+        assert steps["spec"] == "skipped"
+        assert steps["plan"] == "skipped"
+        assert steps["build"] == "not_started"
+        assert steps["check"] == "not_started"
+
+    def test_vibe_build_can_start(self, repo: Path):
+        _add_phase(repo, size="vibe")
+        code, _ = _run(repo, "set-step-status", "--phase", "24",
+                        "--step", "build", "--status", "in_progress")
+        assert code == 0
+
+    def test_skipped_to_complete_allowed(self, repo: Path):
+        _add_phase(repo, size="vibe")
+        # Start build first (so phase is initialized)
+        _run(repo, "set-step-status", "--phase", "24",
+             "--step", "build", "--status", "in_progress")
+        # Now retroactively complete brd (was skipped)
+        code, _ = _run(repo, "set-step-status", "--phase", "24",
+                        "--step", "brd", "--status", "complete")
+        assert code == 0
+        data = pw.load_tracker(repo)
+        assert data["phases"][0]["steps"]["brd"] == "complete"
+
+    def test_vibe_analyze_first_step_is_build(self, repo: Path):
+        _add_phase(repo, size="vibe")
+        code, out = _run(repo, "analyze-phase", "--phase", "24", "--json")
+        result = json.loads(out)
+        assert result["first_incomplete_step"] == "build"
+
+
+# ---------------------------------------------------------------------------
+# TestFloatPhaseNumbers
+# ---------------------------------------------------------------------------
+
+class TestFloatPhaseNumbers:
+    def test_decimal_phase_number(self, repo: Path):
+        code, _ = _run(repo, "add-phase", "--number", "7.5", "--title", "Hotfix")
+        assert code == 0
+        data = pw.load_tracker(repo)
+        assert data["phases"][0]["number"] == 7.5
+
+    def test_whole_number_stays_int(self, repo: Path):
+        code, _ = _run(repo, "add-phase", "--number", "8", "--title", "Feature")
+        assert code == 0
+        data = pw.load_tracker(repo)
+        assert data["phases"][0]["number"] == 8
+        assert isinstance(data["phases"][0]["number"], int)
+
+    def test_decimal_phase_dir_name(self, repo: Path):
+        _run(repo, "add-phase", "--number", "7.5", "--title", "Hotfix")
+        _run(repo, "set-step-status", "--phase", "7.5",
+             "--step", "ideas", "--status", "in_progress")
+        assert (repo / "phases" / "phase-7-5-hotfix").is_dir()
+
+    def test_decimal_depends_on(self, repo: Path):
+        _run(repo, "add-phase", "--number", "7", "--title", "Base")
+        _run(repo, "add-phase", "--number", "7.5", "--title", "Hotfix",
+             "--depends-on", "7")
+        data = pw.load_tracker(repo)
+        hotfix = [p for p in data["phases"] if p["number"] == 7.5][0]
+        assert hotfix["depends_on"] == [7]
+
+    def test_phases_sorted_by_number(self, repo: Path):
+        _run(repo, "add-phase", "--number", "8", "--title", "Later")
+        _run(repo, "add-phase", "--number", "7.5", "--title", "Middle")
+        _run(repo, "add-phase", "--number", "7", "--title", "First")
+        data = pw.load_tracker(repo)
+        numbers = [p["number"] for p in data["phases"]]
+        assert numbers == [7, 7.5, 8]
+
+    def test_display_no_trailing_zero(self, repo: Path):
+        _run(repo, "add-phase", "--number", "8", "--title", "Feature")
+        code, out = _run(repo, "list-phases")
+        assert "Phase 8:" in out
+        assert "8.0" not in out

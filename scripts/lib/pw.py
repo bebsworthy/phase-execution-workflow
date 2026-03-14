@@ -16,7 +16,7 @@ from pathlib import Path
 import yaml
 
 VALID_STEP_STATUSES = {"not_started", "in_progress", "complete", "skipped"}
-VALID_PHASE_SIZES = {"small", "medium", "large"}
+VALID_PHASE_SIZES = {"small", "medium", "large", "vibe"}
 STEP_ORDER = ["ideas", "brd", "research", "spec", "plan", "build", "check"]
 
 # Steps to auto-skip by phase size.  large = no skips (default).
@@ -24,6 +24,7 @@ SIZE_SKIP_STEPS: dict[str, set[str]] = {
     "large": set(),
     "medium": {"ideas"},
     "small": {"ideas", "research"},
+    "vibe": {"ideas", "brd", "research", "spec", "plan"},
 }
 STEP_FILE = {
     "ideas": "IDEAS.md",
@@ -120,6 +121,11 @@ def repo_root_from_script() -> Path:
     return cwd
 
 
+def _norm_num(n: int | float) -> int | float:
+    """Normalize phase number: 24.0 → 24, but 7.5 stays 7.5."""
+    return int(n) if isinstance(n, float) and n == int(n) else n
+
+
 def kebab_case(text: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", text.lower())
     return re.sub(r"-{2,}", "-", slug).strip("-")
@@ -146,6 +152,7 @@ def load_tracker(root: Path, config: dict | None = None) -> dict:
         return {"phases": []}
     # Ensure each phase has all expected fields
     for phase in data["phases"]:
+        phase["number"] = _norm_num(phase["number"])
         phase.setdefault("brief", "")
         phase.setdefault("refs", [])
         phase.setdefault("summary", "")
@@ -169,9 +176,10 @@ def save_tracker(root: Path, data: dict, config: dict | None = None) -> None:
     )
 
 
-def find_phase(data: dict, phase_number: int) -> dict | None:
+def find_phase(data: dict, phase_number: int | float) -> dict | None:
+    phase_number = _norm_num(phase_number)
     for phase in data.get("phases", []):
-        if phase["number"] == phase_number:
+        if _norm_num(phase["number"]) == phase_number:
             return phase
     return None
 
@@ -376,7 +384,7 @@ def cmd_add_phase(args: argparse.Namespace) -> int:
 
     depends_on = []
     if args.depends_on:
-        depends_on = [int(x.strip()) for x in args.depends_on.split(",") if x.strip()]
+        depends_on = [_norm_num(float(x.strip())) for x in args.depends_on.split(",") if x.strip()]
 
     tags = []
     if args.tags:
@@ -390,7 +398,7 @@ def cmd_add_phase(args: argparse.Namespace) -> int:
     skip_steps = SIZE_SKIP_STEPS.get(size, set())
 
     phase = {
-        "number": args.number,
+        "number": _norm_num(args.number),
         "title": args.title,
         "brief": args.brief or "",
         "refs": refs,
@@ -1046,12 +1054,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
 
     ap = sub.add_parser("analyze-phase", help="Analyze phase step completion.")
-    ap.add_argument("--phase", type=int, required=True)
+    ap.add_argument("--phase", type=float, required=True)
     ap.add_argument("--json", action="store_true")
     ap.set_defaults(func=cmd_analyze_phase)
 
     add = sub.add_parser("add-phase", help="Add a new phase to the tracker.")
-    add.add_argument("--number", type=int, required=True)
+    add.add_argument("--number", type=float, required=True)
     add.add_argument("--title", required=True)
     add.add_argument("--brief", default=None, help="Phase brief: what this phase delivers and why.")
     add.add_argument("--depends-on", default=None, help="Comma-separated dependency phase numbers.")
@@ -1068,25 +1076,25 @@ def build_parser() -> argparse.ArgumentParser:
     lp.set_defaults(func=cmd_list_phases)
 
     sss = sub.add_parser("set-step-status", help="Update individual step status.")
-    sss.add_argument("--phase", type=int, required=True)
+    sss.add_argument("--phase", type=float, required=True)
     sss.add_argument("--step", required=True)
     sss.add_argument("--status", required=True)
     sss.set_defaults(func=cmd_set_step_status)
 
     vt = sub.add_parser("verify-traceability", help="Check ID traceability between step artifacts.")
-    vt.add_argument("--phase", type=int, required=True)
+    vt.add_argument("--phase", type=float, required=True)
     vt.add_argument("--from", dest="from_step", required=True)
     vt.add_argument("--to", required=True)
     vt.set_defaults(func=cmd_verify_traceability)
 
     cd = sub.add_parser("check-dependencies", help="Check if phase dependencies are satisfied.")
-    cd.add_argument("--phase", type=int, required=True)
+    cd.add_argument("--phase", type=float, required=True)
     cd.add_argument("--through", default=None,
                     help="Check that dependencies completed through this step (e.g., plan) instead of fully complete.")
     cd.set_defaults(func=cmd_check_dependencies)
 
     pd = sub.add_parser("phase-diff", help="Show files changed since phase start.")
-    pd.add_argument("--phase", type=int, required=True)
+    pd.add_argument("--phase", type=float, required=True)
     pd.set_defaults(func=cmd_phase_diff)
 
     dc = sub.add_parser("dump-config", help="Output resolved pew.yaml config as JSON.")
@@ -1102,7 +1110,7 @@ def build_parser() -> argparse.ArgumentParser:
     rp.set_defaults(func=cmd_resolve_profiles)
 
     ei = sub.add_parser("extract-ids", help="Extract compact FC/T index from BRD + SPEC.")
-    ei.add_argument("--phase", type=int, required=True)
+    ei.add_argument("--phase", type=float, required=True)
     ei.set_defaults(func=cmd_extract_ids)
 
     vc = sub.add_parser("validate-config", help="Validate pew.yaml configuration.")

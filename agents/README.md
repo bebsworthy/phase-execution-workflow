@@ -75,3 +75,9 @@ The main agent MAY spawn these as needed, and MAY define additional phase-specif
 | [test-audit-synthesis](test-audit-synthesis.md) | inherit | Phase 3: consolidate findings, prioritize remediation                    | All Phase 1-2 outputs                                 | `{config.paths.audit_test}/08-synthesis.md`                               |
 | [test-audit-remediation](test-audit-remediation.md) | inherit | Phase 4: concrete code fixes with before/after                       | Synthesis + source/test files                         | `{config.paths.audit_test}/09-remediation.md`                             |
 | [test-audit-architecture](test-audit-architecture.md) | inherit | Phase 5: test architecture redesign & playbook                     | All previous outputs                                  | `{config.paths.audit_test}/10-architecture.md`                            |
+
+### Vibe Mode Agent (spawned by vibe command orchestrator)
+
+| Agent                                           | Model   | When to Use                                                              | Input                                                 | Output                                                      |
+| ----------------------------------------------- | ------- | ------------------------------------------------------------------------ | ----------------------------------------------------- | ----------------------------------------------------------- |
+| [build-vibe-synthesizer](build-vibe-synthesizer.md) | inherit | Vibe close: generate post-hoc BRD/SPEC from decision log + code diff | DECISIONS.md, phase-diff, conventions                 | `{phase-dir}/BRD.md` + `{phase-dir}/SPEC.md`               |
