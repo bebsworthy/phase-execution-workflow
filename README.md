@@ -76,12 +76,24 @@ Standalone 5-phase UX/UI audit that runs independently of the build workflow. Sp
 
 Output: `ux-review/` directory with per-phase reports and a synthesized playbook.
 
+### `/test-audit` — Test Suite Quality Audit
+
+Standalone 5-phase audit targeting systemic quality issues in LLM-generated test suites. Spawns 10 specialist agents (`test-audit-*`) across 5 phases — Phase 2 runs 6 agents in parallel for speed:
+
+1. **Discovery** — Stack detection, test inventory, coverage baseline, flaky candidate detection
+2. **Deep Audit** (6 agents in parallel) — Tautological tests, over-mocking, framework testing, missing coverage, maintainability, flaky tests
+3. **Synthesis** — Deduplicate findings, classify every test (KEEP/REFACTOR/DELETE/REWRITE/MISSING), prioritize remediation
+4. **Remediation** — Concrete code fixes with before/after examples for highest-impact issues
+5. **Architecture** — Test directory redesign, testing playbook, CI configuration, LLM agent instructions
+
+Output: `test-review/` directory with per-phase reports and a synthesized playbook.
+
 ## What's included
 
 | Component              | Description                                                                                                                                                                                                                     |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **3 skills**           | `/pew-build` (build workflow), `/pew-init` (project setup), `/pew-ux-audit` (UX/UI audit)                                                                                                                                            |
-| **24 agents**          | Step writers (5): ideas, BRD, research, spec, plan. Research (3): feature benchmarker, UX researcher, UX designer. Build (2): frontend/backend developers. Council (6): security, architecture, testing, test-quality, frontend, backend. Verification (2): alignment checker, product reviewer. UX audit (5): goals, impl, research, eval, proposals. See [agents/README.md](agents/README.md) |
+| **4 skills**           | `/pew-build` (build workflow), `/pew-init` (project setup), `/pew-ux-audit` (UX/UI audit), `/test-audit` (test quality audit)                                                                                                        |
+| **34 agents**          | Step writers (5): ideas, BRD, research, spec, plan. Research (3): feature benchmarker, UX researcher, UX designer. Build (2): frontend/backend developers. Council (6): security, architecture, testing, test-quality, frontend, backend. Verification (2): alignment checker, product reviewer. UX audit (5): goals, impl, research, eval, proposals. Test audit (10): inventory, tautological, mocking, framework, coverage, maintainability, flaky, synthesis, remediation, architecture. See [agents/README.md](agents/README.md) |
 | **Review profiles**    | Composable tech best practices (fundamental, TypeScript, React, NestJS, TanStack, Tailwind, SPA, REST API, PostgreSQL) — auto-detected and injected                                                                             |
 | **Templates**          | Reference templates for IDEAS, BRD, RESEARCH, SPEC, PLAN artifacts                                                                                                                                                              |
 | **Helper script**      | `pw.sh` — phase tracker management (YAML-based), traceability verification, config validation, profile resolution                                                                                                                |
@@ -126,6 +138,7 @@ Not every change needs the full 7-step loop. Use `--size` when adding phases:
   status phase <N>             # show progress
 
 /ux-audit                      # run full 5-phase UX/UI audit
+/test-audit                    # run 10-agent test suite quality audit
 ```
 
 ## Requirements
