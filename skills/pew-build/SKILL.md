@@ -6,11 +6,13 @@ user-invocable: true
 
 # Phase Execution Workflow
 
+You are an **orchestrator**. Your job is to dispatch sub-agents, validate their output, enforce quality gates, and manage phase lifecycle. You do NOT read source code, write artifact documents, or do research — agents handle that.
+
 ## Configuration
 
 Project-specific settings live in `pew.yaml` at the repo root. **Before executing any command**, check if `pew.yaml` exists by running `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh validate-config`. If it returns `"configured": false`, **stop immediately** and tell the user: "PEW is not configured for this project. Run `/pew-init` to set up your project configuration." Do not proceed with any workflow commands until `pew.yaml` exists.
 
-If `pew.yaml` exists, load the config by running `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config`. When spawning sub-agents, pass the relevant config fields from the loaded config (do not re-run the command in the agent — pass the values directly).
+If `pew.yaml` exists, load the config by running `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config`. Config is **auto-injected into every PEW agent** via the `SubagentStart` hook defined in `plugin.json`. The hook runs `pw.sh dump-config --scope <role>` and injects the result as `additionalContext` — agents see it in their context as `config.*` fields. You do NOT need to manually embed config in spawn prompts.
 
 Config fields used throughout this skill:
 
@@ -65,7 +67,7 @@ Phases can include a `refs` list pointing to external research, UX audits, or an
     - ux-review/01-user-goals.md
 ```
 
-When a phase has refs, **every step that reads the brief MUST also read the ref docs** to resolve IDs and understand the full context. Pass ref contents to sub-agents alongside the brief.
+When a phase has refs, pass ref paths to every step agent so they can resolve IDs and understand context.
 
 Add refs via CLI: `pw.sh add-phase --number 5 --title "Read/Unread" --refs "ux-review/04-audit.md,ux-review/01-user-goals.md"`
 
@@ -89,29 +91,188 @@ For **small** phases, the BRD should be minimal: just FCs + acceptance criteria,
 
 ---
 
-## Step Definitions
+## Step Dispatch
 
 ### Smart Step Resolution (before any command)
 
-Run `pw.sh analyze-phase --phase <N> --json` and resume from the first incomplete step. Earlier incomplete steps always take priority. Missing files, template placeholders, and unchecked checklists count as incomplete.
+Run `pw.sh analyze-phase --phase <N> --json` and resume from the first incomplete step. Earlier incomplete steps always take priority.
 
-### Conventions Check (before every step)
+### Dispatch Loop
 
-If `config.conventions_file` is set and the file exists, read it before starting any step. Conventions are settled decisions — never recommend against an accepted convention without explicit justification. When making design choices in IDEAS, BRD, SPEC, or PLAN, check conventions first.
+For each step, the orchestrator: sets status to `in_progress`, spawns the step agent(s), validates output, runs gates, sets status to `complete`, and commits. The orchestrator **never reads code or writes artifacts** — agents do that.
 
-**Before executing any step**, read its instructions from `${CLAUDE_PLUGIN_ROOT}/skills/pew-build/steps/<step>.md`:
+Each agent receives: phase context (number, title, tags, brief), file paths to read, conventions file path, and relevant config fields. Pass template paths as `${CLAUDE_PLUGIN_ROOT}/templates/<STEP>.template.md`.
 
-| Step | File | Artifact |
+#### Step 1: IDEAS
+
+| Agent | Input | Output |
 | --- | --- | --- |
-| 1. IDEAS | `steps/ideas.md` | IDEAS.md |
-| 2. BRD | `steps/brd.md` | BRD.md |
-| 3. RESEARCH | `steps/research.md` | RESEARCH.md |
-| 4. SPEC | `steps/spec.md` | SPEC.md |
-| 5. PLAN | `steps/plan.md` | PLAN.md |
-| 6. BUILD | `steps/build.md` | (implementation) |
-| 7. CHECK/CLOSE | `steps/check.md` | COUNCIL-REVIEW.md |
+| `build-feature-benchmarker` | Phase brief, tags, research path, competitors | `{config.paths.research}/benchmark-<topic>.md` |
+| `build-ideas-writer` | Phase brief, refs, retro path, benchmark doc paths, conventions | `{phase-dir}/IDEAS.md` |
 
-Only read the step file you are about to execute. Do not pre-load other steps.
+1. `pw.sh set-step-status --phase N --step ideas --status in_progress`
+2. Unless `skip research` flag: spawn `build-feature-benchmarker` with phase brief, title, tags, config (competitors, research path). Wait for completion. Note output file path.
+3. Spawn `build-ideas-writer` with: phase brief, title, tags, refs paths, previous RETRO.md path (if exists), benchmark doc paths (from step 2), conventions file path, template path. Wait for completion.
+4. **Validate**: `{phase-dir}/IDEAS.md` exists and is non-empty
+5. If agent reported open questions: present them via `AskUserQuestion`, then re-spawn agent with answers
+6. Atomic commit
+7. `pw.sh set-step-status --phase N --step ideas --status complete`
+
+#### Step 2: BRD
+
+| Agent | Input | Output |
+| --- | --- | --- |
+| `build-brd-writer` | IDEAS.md path, refs, conventions | `{phase-dir}/BRD.md` |
+
+1. `pw.sh set-step-status --phase N --step brd --status in_progress`
+2. Spawn `build-brd-writer` with: IDEAS.md path, refs paths, conventions file path, phase context, template path. Wait for completion.
+3. **Validate**: `{phase-dir}/BRD.md` exists and is non-empty
+4. If agent reported open questions: present via `AskUserQuestion`, re-spawn with answers
+5. **Gate**: `pw.sh verify-traceability --phase N --from ideas --to brd`
+6. Atomic commit
+7. `pw.sh set-step-status --phase N --step brd --status complete`
+
+#### Step 3: RESEARCH
+
+| Agent | Input | Output |
+| --- | --- | --- |
+| `build-ux-researcher` (if frontend) | BRD.md, phase context | `{config.paths.research}/ux-<theme>.md` |
+| `build-ux-designer` (if frontend) | BRD.md, UX research output | `{phase-dir}/DESIGN.md` |
+| `build-research-writer` | BRD.md, refs, UX docs, arch-ref, conventions | `{phase-dir}/RESEARCH.md` |
+
+1. `pw.sh set-step-status --phase N --step research --status in_progress`
+2. If phase has `frontend` tag and size is `large`:
+   a. Spawn `build-ux-researcher` with BRD.md path, phase context, config (stack, research path). Wait for completion. Note output file path.
+   b. Spawn `build-ux-designer` with BRD.md path, UX research output path, config (stack, component paths). Wait for completion.
+3. Spawn `build-research-writer` with: BRD.md path, refs paths, UX research doc paths (if any), architecture-reference.md path, conventions file path, phase tags, template path. Wait for completion.
+4. **Validate**: `{phase-dir}/RESEARCH.md` exists and is non-empty
+5. If agent reported open questions: present via `AskUserQuestion`, re-spawn with answers
+6. Atomic commit
+7. `pw.sh set-step-status --phase N --step research --status complete`
+
+#### Step 4: SPEC
+
+| Agent | Input | Output |
+| --- | --- | --- |
+| `build-spec-writer` | BRD.md, RESEARCH.md, DESIGN.md?, conventions | `{phase-dir}/SPEC.md` |
+
+1. `pw.sh set-step-status --phase N --step spec --status in_progress`
+2. Spawn `build-spec-writer` with: BRD.md path, RESEARCH.md path, DESIGN.md path (if exists), conventions file path, phase context, template path. Wait for completion.
+3. **Validate**: `{phase-dir}/SPEC.md` exists and is non-empty
+4. **Gate**: `pw.sh verify-traceability --phase N --from brd --to spec`
+5. Atomic commit
+6. `pw.sh set-step-status --phase N --step spec --status complete`
+
+#### Step 5: PLAN
+
+| Agent | Input | Output |
+| --- | --- | --- |
+| `build-plan-writer` | SPEC.md, conventions | `{phase-dir}/PLAN.md` |
+
+1. `pw.sh set-step-status --phase N --step plan --status in_progress`
+2. Spawn `build-plan-writer` with: SPEC.md path, conventions file path, phase context, template path. Wait for completion.
+3. **Validate**: `{phase-dir}/PLAN.md` exists and is non-empty
+4. **Gate**: `pw.sh verify-traceability --phase N --from spec --to plan`
+5. Atomic commit
+6. `pw.sh set-step-status --phase N --step plan --status complete`
+7. If `plan phase` mode: **STOP HERE**.
+
+#### Step 6: BUILD
+
+1. **Approval gate**: If `config.approval_gates.before_build` is true, present gate summary via `AskUserQuestion`: phase title, completed artifacts, key SPEC decisions, task count from PLAN. Options: "Approve BUILD" / "Request changes". Fires in both manual and auto mode.
+2. **Pre-gate**: `pw.sh check-dependencies --phase N` (full, not --through)
+3. `pw.sh set-step-status --phase N --step build --status in_progress`
+4. Read PLAN.md **task list only** (task IDs, descriptions, agent assignments, dependencies, linked T-nnn). Do NOT read playbooks, profiles, or source code.
+5. Resolve review profiles: `pw.sh resolve-profiles --profiles-dir ${CLAUDE_PLUGIN_ROOT}/review-profiles/ --files <task-target-files> --summary`
+6. For each task in dependency order (tracks with no cross-track dependencies may execute in parallel):
+   - Spawn the assigned agent (`build-frontend-developer` or `build-backend-developer`) with:
+     - Task description and acceptance criteria
+     - Linked T-nnn test entries from SPEC
+     - Resolved review profile summaries (from step 5)
+     - Playbook directory path: `{config.paths.guidelines}/`
+     - Phase refs paths
+     - Verify commands: `{config.commands.verify}`
+   - Wait for completion
+   - Update PLAN.md task status (`done` / `descoped`)
+7. **Architecture reference check**: If agent reports new modules/services/patterns created, update `{config.paths.research}/architecture-reference.md`
+8. Atomic commits per implementation slice
+9. `pw.sh set-step-status --phase N --step build --status complete`
+
+#### Step 7: CHECK + CLOSE
+
+This step stays with the orchestrator — it is coordination work (dispatching experts, merging JSON, running commands), not document authoring.
+
+**Step 7a — Council Review**:
+
+1. **SKIP CHECK**: If `config.council.enabled` is `false`, or phase tags match any entry in `config.council.skip_tags`, skip to 7b.
+2. **SCOPE**: Run `pw.sh phase-diff --phase N` to get changed files.
+3. **CATEGORIZE** files into domains:
+   - `security`: auth, middleware, env, API routes, validation, webhooks
+   - `architecture`: module boundaries, shared utilities, barrel exports, services
+   - `testing`: `*.test.*`, `*.spec.*`, `*.e2e-spec.*` + their source files
+   - `test-quality`: same files as testing (reviews test implementation quality)
+   - `frontend`: components, hooks, pages, styles (if expert active)
+   - `backend`: controllers, services, modules, migrations (if expert active)
+4. **DETERMINE ACTIVE EXPERTS**:
+   - Always active: `council-security`, `council-architecture`, `council-testing`, `council-test-quality`
+   - Conditional: `council-frontend` (if phase has `frontend` tag or `config.stack.frontend_src` is set)
+   - Conditional: `council-backend` (if phase has `backend` tag or server-side files are in the diff)
+   - Conditional: `build-product-reviewer` (if phase has `frontend` tag and `config.product_review.enabled` is true) — dispatched in Step 7b, not 7a
+5. **RESOLVE REVIEW PROFILES**: Run `pw.sh resolve-profiles --profiles-dir ${CLAUDE_PLUGIN_ROOT}/review-profiles/ --files <comma-separated-phase-diff-files> --summary`.
+6. **BUILD ARTIFACT INDEX**: Run `pw.sh extract-ids --phase N`. Pass this compact JSON index to experts instead of full BRD/SPEC content.
+7. **DISPATCH** all active experts **in parallel** using the Agent tool. Each expert receives:
+   - Phase number, title, tags
+   - Domain-specific file list (from step 3)
+   - Artifact index JSON (from step 6) — NOT full BRD/SPEC content
+   - BRD.md and SPEC.md file paths (for targeted reads when needed)
+   - Condensed review profile summaries (from step 5)
+   - Conventions file path (if configured)
+   - Reference doc path (if configured per expert in `config.council.experts`)
+8. **COLLECT** JSON findings from each expert. Verify valid JSON with `expert` (string) and `findings` (array) fields. If malformed, log and exclude — do not retry.
+9. **MERGE and DEDUPLICATE** (dedup key: file + line range):
+   - Same file + same line range + same issue → keep domain-specific expert's finding, drop generalist's
+   - Same file + same line range + different angle → keep both, add `related_to` cross-reference
+   - Contradicting findings → keep both, flag for user resolution in Dedup Notes
+   - Convention-covered patterns → silently drop, note in Dedup Notes
+10. **PERSIST** merged findings to `{phase-dir}/COUNCIL-REVIEW.md`: date, phase number/title, active experts, findings grouped by domain, Dedup Notes section.
+
+**Step 7b — Verify**:
+
+- Run `{config.commands.verify}` (lint + typecheck + test:all); for frontend phases also run `{config.commands.e2e}`
+- Code quality check: review test files for empty assertions, `.toBeDefined()`-only tests, mocking the subject under test
+- Spawn `build-alignment-checker`: verify each FC-nnn has implementation, each T-nnn has test
+- If phase has `frontend` tag and `config.product_review.enabled` is true: spawn `build-product-reviewer` with BRD.md path, `config.product_review.app_url`, `config.product_review.start_command`. If browser tools unavailable, skip with warning.
+- Classify each issue by severity: P1 (Critical), P2 (Important), P3 (Minor)
+- Collect all issues (council + verify) into single list: `council | lint | type | test | quality | alignment | docs` × `P1 | P2 | P3`
+
+**Step 7c — Fix** (if issues found):
+
+- Fix cycle priority: P1 → P2 → P3
+- For each issue: classify as `fix | descope | defer`
+  - `fix`: make the change, atomic commit
+  - `descope`: update SPEC.md/PLAN.md with rationale
+  - `defer`: add carry-forward note to RETRO.md
+- Update COUNCIL-REVIEW.md — mark each finding with disposition (`fixed`/`deferred`/`descoped`) + commit hash or rationale
+- After all fixes, restart from 7b (council review does NOT re-run). Max 3 fix cycles before escalating.
+
+**Step 7d — Close** (all P1 checks green):
+
+- **Approval gate**: If `config.approval_gates.before_close` is true, present close summary via `AskUserQuestion`: verification results, COUNCIL-REVIEW.md link, deferred items. Options: "Approve CLOSE" / "Request changes".
+- Finalize COUNCIL-REVIEW.md — summary header with counts: total, fixed, deferred, descoped
+- Record verification evidence in PLAN.md
+- Close every test ID with `passed|failed|descoped` + evidence
+- If recurring patterns, offer to add to conventions file
+- Optional: create RETRO.md (3-5 went well, 3-5 improve, carry-forwards, max 30 lines)
+- `pw.sh set-step-status --phase N --step check --status complete` (auto-closes phase)
+
+**CHECK constraints:**
+
+- Do NOT close with any P1 issues unresolved
+- Do NOT skip the alignment checker agent
+- Do NOT mark tests as passing without running them
+- Do NOT skip dispatching a council expert because its domain seems irrelevant — let the expert decide
+- Do NOT include code snippets in merged council findings
+- Do NOT auto-fix council findings without user review
 
 ---
 
@@ -163,7 +324,7 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh <command>
 
 1. **Step ordering is strict** — same 7-step sequence, no skipping
 2. **Hard gate policy** — each step must be complete + committed before the next begins
-3. **Sub-agent delegation** — try one sub-agent per step; fallback to main agent if unavailable
+3. **Sub-agent delegation** — every step is handled by a dedicated agent; the orchestrator only validates and gates
 4. **Stop condition** — approval gates always fire even in auto mode. Unresolved open questions with no good default also stop. After gate approval, resume auto mode execution from the next step without requiring a separate "continue" command.
 5. **Default-by-best-practice** — proceed + log as ADR in SPEC.md
 6. **Anti-drift lock** — before build step, only edit phase artifacts
@@ -202,10 +363,9 @@ Fix cycles prioritize P1 → P2 → P3. A phase can close with P2/P3 deferred bu
 
 ### Conventions File
 
-If `config.conventions_file` is set and the file exists, it contains settled architectural and coding decisions. All agents and steps must respect conventions:
+If `config.conventions_file` is set and the file exists, it contains settled architectural and coding decisions. Pass the conventions file path to every step agent. Conventions rules:
 
-- **IDEAS/BRD/SPEC/PLAN**: Check conventions before making design choices. If a convention covers the topic, follow it.
-- **BUILD**: Follow conventions when implementing. Do not contradict accepted patterns.
+- **All agents**: Check conventions before making design choices. Follow accepted patterns.
 - **CHECK**: Flag implementation that contradicts a convention as a P1 alignment issue.
 - **Never recommend against** an accepted convention without explicit justification and user approval.
 
@@ -220,18 +380,26 @@ If `config.conventions_file` is set and the file exists, it contains settled arc
 
 ### AskUserQuestion Integration
 
-When completing IDEAS, BRD, or RESEARCH steps, use the built-in `AskUserQuestion` tool to present open questions before proceeding. Call it with up to 4 questions per invocation. For each question:
+When a step agent reports open questions, the orchestrator presents them via the `AskUserQuestion` tool. Call it with up to 4 questions per invocation. For each question:
 
 - `question`: the full question text ending with `?`
 - `header`: short label (max 12 chars), e.g. `"Scope"`, `"Auth model"`
 - `options`: 2-4 choices, each with `label` (1-5 words) and `description` (trade-offs/implications). Put the recommended option first with `"(Recommended)"` appended to its label.
 - `multiSelect`: `true` when choices are not mutually exclusive
 
-Record user responses in the artifact as resolved decisions. In auto mode: proceed with the recommended option only if high confidence + low impact; otherwise call `AskUserQuestion`.
+Record user responses and re-spawn the agent with answers if needed. In auto mode: proceed with recommended option only if high confidence + low impact; otherwise call `AskUserQuestion`.
 
 ### Agent Spawning Protocol
 
-When spawning any sub-agent, pass the relevant config fields directly in the agent prompt. Use scoped config output where appropriate: `pw.sh dump-config --scope agent` for developer agents, `--scope council` for council experts, `--scope research` for research agents. Each agent's `.md` file documents what config fields it uses.
+Config fields (`config.*`) are **auto-injected** via the `SubagentStart` hook — do not embed config in spawn prompts.
+
+When spawning any sub-agent, pass only:
+
+1. **Phase context**: number, title, tags, brief, phase directory path
+2. **File paths**: input artifact paths (not content), output path, template path
+3. **Refs paths**: if the phase has refs
+
+Never pass file content inline — agents read files themselves. Never read source code or artifact content yourself — that's the agent's job.
 
 ### Operating Rules
 
@@ -239,7 +407,7 @@ When spawning any sub-agent, pass the relevant config fields directly in the age
 - Do not implement before explicit user command (except in auto mode after all gates pass)
 - Do not advance to next phase with unresolved P1 issues
 - If scope changes, update all impacted docs in order
-- Commit discipline: atomic commits after completed steps
+- Commit discipline: atomic commits after completed steps (orchestrator commits, not agents)
 - Update `last_updated` in edited docs on every material change
 
 ### Definition of Done

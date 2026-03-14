@@ -6,6 +6,19 @@
     "name": "Boyd Stratton"
   },
   "license": "MIT",
+  "hooks": {
+    "SubagentStart": [
+      {
+        "matcher": "build-|council-|ux-audit-",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/inject-config.sh"
+          }
+        ]
+      }
+    ]
+  },
   "keywords": [
     "workflow",
     "phase",
