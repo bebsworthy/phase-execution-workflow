@@ -26,7 +26,7 @@ Create the `{config.paths.audit_test}/` directory. This is the shared workspace 
 ├── 08-synthesis.md            ← written by test-audit-synthesis
 ├── 09-remediation.md          ← written by test-audit-remediation
 ├── 10-architecture.md         ← written by test-audit-architecture
-└── playbook.md                ← written by YOU (final output)
+└── report.md                ← written by YOU (final output)
 ```
 
 ## Step 1 — Phase 1: Discovery (Sequential)
@@ -90,7 +90,7 @@ After all 10 agents complete, read each file in order:
 4. `{config.paths.audit_test}/09-remediation.md`
 5. `{config.paths.audit_test}/10-architecture.md`
 
-Write **`{config.paths.audit_test}/playbook.md`** — the final deliverable. Must include:
+Write **`{config.paths.audit_test}/report.md`** — the final deliverable. Must include:
 
 - **Executive Summary**: 3-5 sentences + top 3 strengths + top 3 critical issues
 - **Key Metrics**: total tests, tests by verdict (keep/refactor/delete/rewrite), estimated % test theater, mock density, missing test gap
@@ -105,7 +105,7 @@ Write **`{config.paths.audit_test}/playbook.md`** — the final deliverable. Mus
 Then output:
 
 ```
-[ORCHESTRATOR] PLAYBOOK COMPLETE ✓ — saved to {config.paths.audit_test}/playbook.md
+[ORCHESTRATOR] REPORT COMPLETE ✓ — saved to {config.paths.audit_test}/report.md
 
 {config.paths.audit_test}/
 ├── 01-inventory.json          ✓
@@ -118,7 +118,7 @@ Then output:
 ├── 08-synthesis.md            ✓
 ├── 09-remediation.md          ✓
 ├── 10-architecture.md         ✓
-└── playbook.md                ✓  ← final output
+└── report.md                ✓  ← final output
 ```
 
 ## Critical Rules

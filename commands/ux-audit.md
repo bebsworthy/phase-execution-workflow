@@ -21,7 +21,7 @@ Create the `{config.paths.audit_ux}/` directory. This is the shared workspace al
 ├── 03-patterns.md         ← written by ux-audit-research agent
 ├── 04-audit.md            ← written by ux-audit-eval agent
 ├── 05-proposals.md        ← written by ux-audit-proposals agent
-└── playbook.md            ← written by YOU (final output)
+└── report.md            ← written by YOU (final output)
 ```
 
 ## Step 1 — Spawn Agents Sequentially
@@ -69,7 +69,7 @@ After all 5 agents complete, read each file in order:
 
 ## Step 3 — Synthesize the Playbook
 
-Write **`{config.paths.audit_ux}/playbook.md`** using the playbook template from the ux-audit skill. This is the final deliverable.
+Write **`{config.paths.audit_ux}/report.md`** using the playbook template from the ux-audit skill. This is the final deliverable.
 
 The playbook must include:
 - **Executive Summary**: 3–5 sentences + top 3 strengths + top 3 critical gaps + emotional design verdict + UX maturity level
@@ -87,7 +87,7 @@ The playbook must include:
 Then output:
 
 ```
-[ORCHESTRATOR] PLAYBOOK COMPLETE ✓ — saved to {config.paths.audit_ux}/playbook.md
+[ORCHESTRATOR] REPORT COMPLETE ✓ — saved to {config.paths.audit_ux}/report.md
 
 {config.paths.audit_ux}/
 ├── 01-user-goals.md      ✓
@@ -95,7 +95,7 @@ Then output:
 ├── 03-patterns.md         ✓
 ├── 04-audit.md            ✓
 ├── 05-proposals.md        ✓
-└── playbook.md            ✓  ← final output
+└── report.md            ✓  ← final output
 ```
 
 ## Critical Rules

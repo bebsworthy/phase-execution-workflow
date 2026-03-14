@@ -1,6 +1,6 @@
 # Playbook Template
 
-Use this template for `{config.paths.audit_ux}/playbook.md`.
+Use this template for `{config.paths.audit_ux}/report.md`.
 
 ```markdown
 # UX/UI Playbook — [Application Name]
