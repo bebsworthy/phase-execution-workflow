@@ -18,7 +18,7 @@ Check for existing audit reports:
    - `{config.paths.audit_test}/08-synthesis.md` → test audit available
    - `{config.paths.audit_ux}/05-proposals.md` → UX audit available
 4. If both exist, ask the user which audit to convert (or both).
-5. If neither exists, tell the user to run `/test-audit` or `/ux-audit` first.
+5. If neither exists, tell the user to run `/pew-test-audit` or `/pew-ux-audit` first.
 6. If `$ARGUMENTS` specifies an audit type (`test` or `ux`), use that directly.
 
 ## Step 2 — Read the Remediation Roadmap
