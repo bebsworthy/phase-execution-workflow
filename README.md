@@ -139,6 +139,7 @@ Not every change needs the full 7-step loop. Use `--size` when adding phases:
 
 /ux-audit                      # run full 5-phase UX/UI audit
 /test-audit                    # run 10-agent test suite quality audit
+/audit-to-phases               # convert audit findings into PEW phases
 ```
 
 ## Requirements

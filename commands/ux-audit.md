@@ -98,6 +98,23 @@ Then output:
 └── report.md            ✓  ← final output
 ```
 
+## Step 4 — Offer to Create Phases
+
+After the report is complete, ask the user if they want to convert the findings into PEW phases:
+
+> "The audit found issues across N improvement levels. Want me to create phases to fix them?"
+
+If yes, follow the `audit-to-phases` command logic (see `commands/audit-to-phases.md`):
+1. Read the proposals (`05-proposals.md`) to extract improvement levels and roadmap
+2. Check current phase state (`pw.sh list-phases --json`)
+3. Propose phases with smart scheduling (start now vs. queue after current work)
+4. Ask for confirmation via `AskUserQuestion`
+5. Create phases via `pw.sh add-phase`
+
+If the user declines, just output the report and finish. They can run `/audit-to-phases` later.
+
+If `pw.sh validate-config` shows no pew.yaml, skip this step — tell the user to run `/pew-init` first if they want to create phases.
+
 ## Critical Rules
 
 - **Never start a phase before the previous phase has completed.**
