@@ -30,7 +30,7 @@ case "$AGENT_TYPE" in
   council-*)
     SCOPE="council"
     ;;
-  build-*|ux-audit-*)
+  build-*|ux-audit-*|test-audit-*)
     SCOPE="agent"
     ;;
   *)
