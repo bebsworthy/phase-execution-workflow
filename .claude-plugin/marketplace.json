@@ -20,6 +20,21 @@
         "code-review"
       ],
       "category": "workflow"
+    },
+    {
+      "name": "pew-doc",
+      "source": "./plugin-doc",
+      "description": "Generate comprehensive application documentation from codebase analysis — product overview, architecture, internals, API contracts, and data models",
+      "version": "1.0.0",
+      "keywords": [
+        "documentation",
+        "architecture",
+        "api",
+        "data-models",
+        "codebase",
+        "reverse-engineering"
+      ],
+      "category": "documentation"
     }
   ]
 }
