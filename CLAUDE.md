@@ -6,22 +6,24 @@ A Claude Code plugin with 5 skills, 4 commands, 34 agents. See [README.md](READM
 
 ## Dev workflow
 
-1. Edit agent/skill/command `.md` files and `scripts/lib/pw.py`
-2. Run tests: `cd scripts/lib && .venv/bin/python3 -m pytest test_pw.py`
+1. Edit agent/skill/command `.md` files and `plugin/scripts/lib/pw.py`
+2. Run tests: `cd plugin/scripts/lib && .venv/bin/python3 -m pytest test_pw.py`
 3. Commit. The pre-push hook auto-bumps version in both `plugin.json` and `marketplace.json`
 4. Push — if the hook bumps, re-push
 
 ## Project structure
 
 ```
-skills/          → Skill definitions (pew-build, pew-init, pew-vibe, pew-ux-audit, pew-test-audit)
-commands/        → Command orchestrators (pew-vibe, pew-ux-audit, pew-test-audit, pew-audit-to-phases)
-agents/          → 34 sub-agent definitions (build-*, council-*, ux-audit-*, test-audit-*)
-scripts/lib/     → pw.py (phase tracker CLI) + test_pw.py + .venv/
-scripts/         → pw.sh (venv wrapper), inject-config.sh (SubagentStart hook), pre-push-bump
-templates/       → Reference templates for phase artifacts (IDEAS, BRD, SPEC, etc.)
-review-profiles/ → Composable tech best-practice profiles (TypeScript, React, NestJS, etc.)
-.claude-plugin/  → plugin.json + marketplace.json (version synced by bump-version)
+plugin/              → The installable plugin (marketplace.json source points here)
+  skills/            → Skill definitions (pew-build, pew-init, pew-vibe, pew-ux-audit, pew-test-audit)
+  commands/          → Command orchestrators (pew-vibe, pew-ux-audit, pew-test-audit, pew-audit-to-phases)
+  agents/            → 34 sub-agent definitions (build-*, council-*, ux-audit-*, test-audit-*)
+  scripts/lib/       → pw.py (phase tracker CLI) + test_pw.py + .venv/
+  scripts/           → pw.sh (venv wrapper), inject-config.sh (SubagentStart hook), pre-push-bump
+  templates/         → Reference templates for phase artifacts (IDEAS, BRD, SPEC, etc.)
+  review-profiles/   → Composable tech best-practice profiles (TypeScript, React, NestJS, etc.)
+  .claude-plugin/    → plugin.json (plugin manifest)
+.claude-plugin/      → marketplace.json (source: "./plugin")
 ```
 
 ## Key conventions
@@ -39,6 +41,6 @@ See [PATTERNS.md](PATTERNS.md) for orchestration patterns, hard constraints, and
 
 ## Tests
 
-All in `scripts/lib/test_pw.py`. Run with `.venv/bin/python3 -m pytest test_pw.py`. The venv is auto-created by `pw.sh` on first run.
+All in `plugin/scripts/lib/test_pw.py`. Run with `.venv/bin/python3 -m pytest test_pw.py` from that directory. The venv is auto-created by `pw.sh` on first run.
 
 When adding features to `pw.py`, add corresponding tests. Current: 119 tests.

@@ -1051,8 +1051,10 @@ def cmd_bump_version(args: argparse.Namespace) -> int:
     pj_data["version"] = new_version
     pj.write_text(json.dumps(pj_data, indent=2) + "\n")
 
-    # Update marketplace.json if present
+    # Update marketplace.json if present (lives at repo root, one level above plugin root)
     mp = plugin_dir / "marketplace.json"
+    if not mp.exists():
+        mp = plugin_root.parent / ".claude-plugin" / "marketplace.json"
     if mp.exists():
         mp_data = json.loads(mp.read_text())
         mp_data["plugins"][0]["version"] = new_version
