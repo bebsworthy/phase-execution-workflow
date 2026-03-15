@@ -21,7 +21,7 @@ You will receive:
 
 ## Process
 
-1. Read BRD.md to understand all FC-nnn requirements
+1. Read BRD.md to understand all FC-nnn requirements and AC-nnn acceptance criteria (including "Covers FC" linkage and validation signals)
 2. Read RESEARCH.md for architecture decisions and technical findings
 3. Read DESIGN.md if provided (frontend phases) for component/flow specs
 4. If conventions file is provided, read it — incorporate accepted conventions into spec decisions
@@ -32,7 +32,7 @@ You will receive:
    - API contracts (request/response, error codes)
    - Auth and authorization rules
    - Observability (logging, metrics, alerts)
-7. Create explicit test plan: T-nnn entries with linked FC, level, target file, scenario, assertions
+7. Create explicit test plan: T-nnn entries with linked FC, level, target file, scenario, assertions. Ensure T-nnn entries collectively satisfy the AC validation signals for their linked FCs.
 8. Map E2E test flows from BRD to `level: e2e` test entries
 9. Define phase exit criteria
 

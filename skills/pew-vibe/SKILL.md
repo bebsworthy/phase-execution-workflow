@@ -39,6 +39,14 @@ A vibe phase still benefits from:
 
 ---
 
+## Resume & Continuity
+
+`/pew-vibe` is **re-entrant** — invoking it when a vibe phase is already active (build step `in_progress`) resumes that phase instead of creating a new one. This is safe to do after a conversation clear (e.g., after plan mode).
+
+A **PreToolUse hook** (`vibe-guard.sh`) provides a safety net: if Claude tries to `git add` or `git commit` during an active vibe phase, the hook injects a reminder to record decisions in D-nnn format and suggests invoking `/pew-vibe` for full workflow context.
+
+---
+
 ## Decision Recording Protocol
 
 Every time the user gives an instruction during a vibe phase, the orchestrator:

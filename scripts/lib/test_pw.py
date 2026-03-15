@@ -1096,12 +1096,71 @@ class TestExtractIds:
         result = json.loads(out)
         assert len(result["capabilities"]) == 1
 
+    def test_extracts_ac_ids_with_linked_fcs(self, repo: Path):
+        _run(repo, "add-phase", "--number", "1", "--title", "Login")
+        pdir = repo / "phases/phase-1-login"
+        pdir.mkdir(parents=True, exist_ok=True)
+
+        (pdir / "BRD.md").write_text(
+            "# BRD\n\n"
+            "## Acceptance Criteria\n\n"
+            "| AC ID | Covers FC | Criterion | Validation Signal |\n"
+            "| ----- | --------- | --------- | ----------------- |\n"
+            "| AC-001 | FC-001, FC-002 | No hard-coded font sizes | grep returns 0 |\n"
+            "| AC-002 | FC-003 | All tests pass | CI green |\n",
+            encoding="utf-8",
+        )
+        (pdir / "SPEC.md").write_text("", encoding="utf-8")
+
+        code, out = _run(repo, "extract-ids", "--phase", "1")
+        assert code == 0
+        result = json.loads(out)
+        assert len(result["acceptance_criteria"]) == 2
+        assert result["acceptance_criteria"][0]["id"] == "AC-001"
+        assert result["acceptance_criteria"][0]["linked_fcs"] == ["FC-001", "FC-002"]
+        assert result["acceptance_criteria"][1]["id"] == "AC-002"
+        assert result["acceptance_criteria"][1]["linked_fcs"] == ["FC-003"]
+
+    def test_ac_without_linked_fcs(self, repo: Path):
+        _run(repo, "add-phase", "--number", "1", "--title", "Login")
+        pdir = repo / "phases/phase-1-login"
+        pdir.mkdir(parents=True, exist_ok=True)
+
+        (pdir / "BRD.md").write_text(
+            "| AC-001 | — | All tests pass | CI green |\n",
+            encoding="utf-8",
+        )
+        (pdir / "SPEC.md").write_text("", encoding="utf-8")
+
+        code, out = _run(repo, "extract-ids", "--phase", "1")
+        assert code == 0
+        result = json.loads(out)
+        assert len(result["acceptance_criteria"]) == 1
+        assert result["acceptance_criteria"][0]["linked_fcs"] == []
+
+    def test_ac_deduplicates(self, repo: Path):
+        _run(repo, "add-phase", "--number", "1", "--title", "Login")
+        pdir = repo / "phases/phase-1-login"
+        pdir.mkdir(parents=True, exist_ok=True)
+
+        (pdir / "BRD.md").write_text(
+            "AC-001 first mention\nAC-001 second mention\n",
+            encoding="utf-8",
+        )
+        (pdir / "SPEC.md").write_text("", encoding="utf-8")
+
+        code, out = _run(repo, "extract-ids", "--phase", "1")
+        assert code == 0
+        result = json.loads(out)
+        assert len(result["acceptance_criteria"]) == 1
+
     def test_missing_files_returns_empty(self, repo: Path):
         _run(repo, "add-phase", "--number", "1", "--title", "Login")
         code, out = _run(repo, "extract-ids", "--phase", "1")
         assert code == 0
         result = json.loads(out)
         assert result["capabilities"] == []
+        assert result["acceptance_criteria"] == []
         assert result["tests"] == []
 
 

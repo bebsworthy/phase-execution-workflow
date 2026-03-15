@@ -10,6 +10,20 @@ You are the orchestrator for a **vibe phase**. Your job is to implement user ins
 
 Read the full vibe framework from `skills/pew-vibe/SKILL.md` for decision recording protocol, auto-classification rules, and synthesis protocol.
 
+## Step -1 — Detect Active Vibe Phase
+
+Before creating a new phase, check if one is already in progress:
+
+1. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh list-phases --json`
+2. Find any phase where `size == "vibe"` AND step `build` is `in_progress`
+3. If found:
+   - Set phase number, title, and phase-dir from the existing phase
+   - Read `{phase-dir}/DECISIONS.md` to determine current D-nnn count
+   - Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config` to load config
+   - Tell the user: "Resuming vibe phase `<N>` — `<title>`. `<X>` decisions recorded so far. Give me your next instruction."
+   - Skip directly to Step 1 (execution loop)
+4. If no active vibe phase found: proceed to Step 0
+
 ## Step 0 — Initialize (on "start vibe phase")
 
 1. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh validate-config`. If no pew.yaml, tell user to run `/pew-init` first.
@@ -88,6 +102,7 @@ The council reviews code against the post-hoc BRD/SPEC. The alignment checker ve
 
 | User Intent | Action |
 | --- | --- |
+| (automatic on invocation) | Step -1: detect active vibe phase, resume if found |
 | `start vibe phase` | Step 0: initialize phase with auto-numbering |
 | `start vibe phase <title>` | Step 0: initialize with given title (skip title question) |
 | `close vibe phase` / `done` / `finish` | Step 2 + Step 3: synthesize then CHECK/CLOSE |

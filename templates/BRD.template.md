@@ -31,8 +31,10 @@ last_updated: YYYY-MM-DD
 
 ## 8. Acceptance Criteria
 
-| AC ID | Criterion | Validation Signal |
-| ----- | --------- | ----------------- |
+<!-- Every AC must reference specific FC(s) in "Covers FC". If an AC uses codebase-wide validation (e.g., grep across all files), FCs must collectively cover all affected files — or narrow the AC's Validation Signal to match the FC scope. -->
+
+| AC ID | Covers FC | Criterion | Validation Signal |
+| ----- | --------- | --------- | ----------------- |
 
 ## 9. Risks and Open Questions
 

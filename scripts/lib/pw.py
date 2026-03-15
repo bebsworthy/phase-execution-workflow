@@ -904,13 +904,15 @@ def cmd_extract_ids(args: argparse.Namespace) -> int:
         "brd_file": str(brd_file),
         "spec_file": str(spec_file),
         "capabilities": [],
+        "acceptance_criteria": [],
         "tests": [],
     }
 
-    # Extract FC-nnn from BRD
+    # Extract FC-nnn and AC-nnn from BRD
     if brd_file.exists():
         brd_lines = brd_file.read_text(encoding="utf-8").splitlines()
         seen_fc: set[str] = set()
+        seen_ac: set[str] = set()
         for i, line in enumerate(brd_lines, 1):
             for m in re.finditer(r"(FC-\d+)", line):
                 fc_id = m.group(1)
@@ -925,6 +927,22 @@ def cmd_extract_ids(args: argparse.Namespace) -> int:
                     "id": fc_id,
                     "line": i,
                     "summary": summary[:120],
+                })
+            for m in re.finditer(r"(AC-\d+)", line):
+                ac_id = m.group(1)
+                if ac_id in seen_ac:
+                    continue
+                seen_ac.add(ac_id)
+                after_id = line[m.end():].strip().lstrip("|").strip()
+                linked_fcs = re.findall(r"FC-\d+", line)
+                summary = re.sub(r"\|.*", "", after_id).strip() if after_id else ""
+                if not summary:
+                    summary = line.strip()
+                result["acceptance_criteria"].append({
+                    "id": ac_id,
+                    "line": i,
+                    "summary": summary[:120],
+                    "linked_fcs": linked_fcs,
                 })
 
     # Extract T-nnn from SPEC

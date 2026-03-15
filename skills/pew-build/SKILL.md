@@ -92,7 +92,7 @@ Skipped steps are pre-set to `skipped` status when the phase is created via `pw.
 
 For **medium** phases, RESEARCH still runs but skips the build-feature-benchmarker (market research) and UX research/design sub-agents — focus on technical research only.
 
-For **small** phases, the BRD should be minimal: just FCs + acceptance criteria, no E2E test flows unless the phase is frontend-tagged.
+For **small** phases, the BRD should be focused but not shallow. The BRD writer still performs pattern analysis — scanning the codebase for all instances of patterns described in the brief — to ensure FCs cover the full scope, not just files mentioned in refs. Just FCs + acceptance criteria, no E2E test flows unless the phase is frontend-tagged.
 
 ---
 
@@ -127,13 +127,13 @@ Each agent receives: phase context (number, title, tags, brief), file paths to r
 
 | Agent | Input | Output |
 | --- | --- | --- |
-| `build-brd-writer` | IDEAS.md path, refs, conventions | `{phase-dir}/BRD.md` |
+| `build-brd-writer` | IDEAS.md path (if exists), refs, conventions | `{phase-dir}/BRD.md` |
 
 1. `pw.sh set-step-status --phase N --step brd --status in_progress`
-2. Spawn `build-brd-writer` with: IDEAS.md path, refs paths, conventions file path, phase context, template path. Wait for completion.
+2. Spawn `build-brd-writer` with: IDEAS.md path (only if IDEAS step was not skipped), refs paths, conventions file path, phase context, template path. Wait for completion.
 3. **Validate**: `{phase-dir}/BRD.md` exists and is non-empty
 4. If agent reported open questions: present via `AskUserQuestion`, re-spawn with answers
-5. **Gate**: `pw.sh verify-traceability --phase N --from ideas --to brd`
+5. **Gate**: `pw.sh verify-traceability --phase N --from ideas --to brd` — skip this gate if IDEAS step was skipped (small phases)
 6. Atomic commit
 7. `pw.sh set-step-status --phase N --step brd --status complete`
 

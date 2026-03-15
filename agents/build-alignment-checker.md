@@ -24,9 +24,14 @@ You will receive:
 4. Extract T-nnn entries from SPEC.md
 5. For each FC-nnn (excluding descoped), search changed files for implementation evidence (controllers, services, components, routes)
 6. For each T-nnn (excluding descoped), search for corresponding test file/function
-7. Check for convention violations in changed files (if conventions file exists)
-8. Classify each item as aligned, misaligned, or missing
-9. Assign severity: P1 for missing/contradicting conventions, P2 for partial implementation, P3 for style
+7. Extract AC-nnn entries from BRD.md. For each AC:
+   a. Read its "Covers FC" column to get linked FC IDs
+   b. If the AC has codebase-wide validation (grep across all files, "no violations in any file"), check whether the linked FCs' scope covers all files that the validation signal would touch
+   c. If the AC references FCs that are descoped, flag as P1 (acceptance criteria cannot be met)
+   d. Classify scope mismatches: P1 if AC validation would fail on files outside FC scope, P2 if ambiguous
+8. Check for convention violations in changed files (if conventions file exists)
+9. Classify each item as aligned, misaligned, or missing
+10. Assign severity: P1 for missing/contradicting conventions, P2 for partial implementation, P3 for style
 
 ## Output
 
@@ -44,6 +49,13 @@ Return a JSON report:
   "tests": {
     "aligned": [{ "id": "T-001", "test_file": "path" }],
     "missing": [{ "id": "T-002", "severity": "P1" }]
+  },
+  "acceptance_criteria": {
+    "aligned": [{ "id": "AC-001", "covers": ["FC-001", "FC-002"] }],
+    "scope_mismatch": [
+      { "id": "AC-002", "issue": "validates all .tsx but FCs only cover 3 files", "severity": "P1" }
+    ],
+    "orphaned": [{ "id": "AC-003", "issue": "references descoped FC-004", "severity": "P1" }]
   },
   "convention_violations": [
     { "file": "path", "convention": "description", "severity": "P1" }
