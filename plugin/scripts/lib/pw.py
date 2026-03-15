@@ -1057,7 +1057,15 @@ def cmd_bump_version(args: argparse.Namespace) -> int:
         mp = plugin_root.parent / ".claude-plugin" / "marketplace.json"
     if mp.exists():
         mp_data = json.loads(mp.read_text())
-        mp_data["plugins"][0]["version"] = new_version
+        plugin_name = pj_data.get("name", "")
+        for entry in mp_data.get("plugins", []):
+            if entry.get("name") == plugin_name:
+                entry["version"] = new_version
+                break
+        else:
+            # Fallback: update first entry if no name match
+            if mp_data.get("plugins"):
+                mp_data["plugins"][0]["version"] = new_version
         mp.write_text(json.dumps(mp_data, indent=2) + "\n")
 
     print(json.dumps({"old": old_version, "new": new_version}))

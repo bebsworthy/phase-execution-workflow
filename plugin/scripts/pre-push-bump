@@ -3,49 +3,97 @@
 #
 # Install:  ln -sf ../../plugin/scripts/pre-push-bump .git/hooks/pre-push
 #
-# If the version hasn't been bumped in the commits being pushed, this hook
-# bumps the patch version, commits it, and aborts the push so you can re-push
-# with the version bump included.
+# Handles both plugins in this repo:
+#   - plugin/     (PEW — marketplace.json plugins[0])
+#   - plugin-doc/ (pew-doc — marketplace.json plugins[1])
+#
+# For each plugin: if its files changed but its version wasn't bumped,
+# bump the patch version, commit, and abort the push so you can re-push.
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# Resolve to repo root — works whether run as hook (.git/hooks/) or directly
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-PLUGIN_JSON="$REPO_ROOT/plugin/.claude-plugin/plugin.json"
 MARKETPLACE="$REPO_ROOT/.claude-plugin/marketplace.json"
 
-if [[ ! -f "$PLUGIN_JSON" ]]; then
-  exit 0  # Not a plugin repo, skip
+if [[ ! -f "$MARKETPLACE" ]]; then
+  exit 0
 fi
 
 # Read remote and ref info from stdin (standard pre-push hook protocol)
+RANGE=""
 while read -r local_ref local_sha remote_ref remote_sha; do
-  # Skip delete pushes
   if [[ "$local_sha" == "0000000000000000000000000000000000000000" ]]; then
     continue
   fi
-
-  # Check if marketplace.json was already modified in the commits being pushed
   if [[ "$remote_sha" == "0000000000000000000000000000000000000000" ]]; then
-    # New branch — check all commits
-    range="$local_sha"
+    RANGE="$local_sha"
   else
-    range="$remote_sha..$local_sha"
-  fi
-
-  if git diff --name-only "$range" -- "plugin/.claude-plugin/plugin.json" ".claude-plugin/marketplace.json" | grep -q .; then
-    # Version was already touched in this push, nothing to do
-    exit 0
+    RANGE="$remote_sha..$local_sha"
   fi
 done
 
-# Version wasn't bumped — bump it now
-"$REPO_ROOT/plugin/scripts/pw.sh" bump-version --bump patch >/dev/null 2>&1
-git -C "$REPO_ROOT" add "$PLUGIN_JSON" "$MARKETPLACE"
-git -C "$REPO_ROOT" commit -m "chore: bump version (auto)"
+if [[ -z "$RANGE" ]]; then
+  exit 0
+fi
 
-echo ""
-echo ">>> Version auto-bumped. Please push again to include the bump."
-echo ""
-exit 1
+NEEDS_BUMP=false
+
+# --- Check plugin/ (PEW) ---
+PEW_JSON="$REPO_ROOT/plugin/.claude-plugin/plugin.json"
+if [[ -f "$PEW_JSON" ]]; then
+  # Did plugin/ files change?
+  PEW_CHANGED=$(git diff --name-only "$RANGE" -- "plugin/" | grep -v "plugin/.claude-plugin/plugin.json" | head -1 || true)
+  # Was its version already bumped?
+  PEW_BUMPED=$(git diff --name-only "$RANGE" -- "plugin/.claude-plugin/plugin.json" | head -1 || true)
+
+  if [[ -n "$PEW_CHANGED" && -z "$PEW_BUMPED" ]]; then
+    # Bump PEW version
+    "$REPO_ROOT/plugin/scripts/pw.sh" bump-version --bump patch >/dev/null 2>&1
+    git -C "$REPO_ROOT" add "$PEW_JSON" "$MARKETPLACE"
+    NEEDS_BUMP=true
+  fi
+fi
+
+# --- Check plugin-doc/ (pew-doc) ---
+DOC_JSON="$REPO_ROOT/plugin-doc/.claude-plugin/plugin.json"
+if [[ -f "$DOC_JSON" ]]; then
+  # Did plugin-doc/ files change?
+  DOC_CHANGED=$(git diff --name-only "$RANGE" -- "plugin-doc/" | grep -v "plugin-doc/.claude-plugin/plugin.json" | head -1 || true)
+  # Was its version already bumped?
+  DOC_BUMPED=$(git diff --name-only "$RANGE" -- "plugin-doc/.claude-plugin/plugin.json" | head -1 || true)
+
+  if [[ -n "$DOC_CHANGED" && -z "$DOC_BUMPED" ]]; then
+    # Bump pew-doc version inline (no pw.sh dependency)
+    python3 -c "
+import json, sys
+pj_path = sys.argv[1]
+mp_path = sys.argv[2]
+plugin_index = int(sys.argv[3])
+
+# Bump plugin.json
+pj = json.loads(open(pj_path).read())
+parts = [int(x) for x in pj['version'].split('.')]
+parts[2] += 1
+new_ver = '.'.join(str(x) for x in parts)
+pj['version'] = new_ver
+open(pj_path, 'w').write(json.dumps(pj, indent=2) + '\n')
+
+# Bump marketplace.json entry
+mp = json.loads(open(mp_path).read())
+mp['plugins'][plugin_index]['version'] = new_ver
+open(mp_path, 'w').write(json.dumps(mp, indent=2) + '\n')
+
+print(json.dumps({'plugin': 'pew-doc', 'new': new_ver}))
+" "$DOC_JSON" "$MARKETPLACE" 1 >/dev/null 2>&1
+    git -C "$REPO_ROOT" add "$DOC_JSON" "$MARKETPLACE"
+    NEEDS_BUMP=true
+  fi
+fi
+
+if [[ "$NEEDS_BUMP" == "true" ]]; then
+  git -C "$REPO_ROOT" commit -m "chore: bump version (auto)"
+  echo ""
+  echo ">>> Version auto-bumped. Please push again to include the bump."
+  echo ""
+  exit 1
+fi
