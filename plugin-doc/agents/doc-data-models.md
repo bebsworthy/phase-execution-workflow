@@ -15,7 +15,7 @@ You are the **Data Models Agent**. Your job is to document every data structure 
 You will receive:
 1. **Target path** — the codebase root
 2. **Discovery JSON path** — read for `keyFiles.dataModel`, stack info, and graph summary
-3. **Product overview path** — read for domain vocabulary context
+3. **Product overview path** (optional) — read for domain vocabulary context. If the file does not exist (incremental mode), proceed without it.
 4. **Output path** — where to write DATA-MODELS.md
 
 ## Process

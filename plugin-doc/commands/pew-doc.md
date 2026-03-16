@@ -48,8 +48,14 @@ Spawn the `doc-discovery` agent with:
 **Wait for completion.** Verify `00-discovery.json` exists and contains valid JSON with `stack`, `layout`, and `keyFiles` fields.
 
 **Monorepo detection:** Read the discovery JSON. If `modules` array has more than one entry, switch to multi-module mode:
-- Create subdirectories under `$OUTPUT_DIR` for each module
-- Re-run the pipeline below for each module (passing module-specific paths)
+- For each module in the `modules` array, use `module.name` as the subdirectory name (sanitized to filesystem-safe chars)
+- Create `$OUTPUT_DIR/{module-name}/` for each module
+- Copy `00-discovery.json` to the root `$OUTPUT_DIR/` (it covers the whole repo)
+- For each module, re-run Steps 2.2–2.4 with:
+  - `$TARGET_PATH` = the module's root path (from `module.path`)
+  - `$OUTPUT_DIR` = `$OUTPUT_DIR/{module-name}/`
+  - Discovery JSON = the root `$OUTPUT_DIR/00-discovery.json`
+- Run validation (Step 3) per module before proceeding to Step 4 (system map)
 
 ### Step 2.2 — Product Overview
 
@@ -87,18 +93,26 @@ Spawn **both agents in parallel**:
 
 ### Step 3a — Coverage Check (parallel)
 
-Spawn `doc-coverage-checker` **5 times in parallel**, once per artifact:
+Spawn `doc-coverage-checker` **5 times in parallel**, once per artifact. Map artifact types to files:
 
-For each artifact in `[PRODUCT, DATA-MODELS, API-CONTRACTS, ARCHITECTURE, INTERNALS]`:
-> Check the coverage of `$OUTPUT_DIR/{artifact-file}` against the codebase at `$TARGET_PATH`. The artifact type is `{ARTIFACT_TYPE}`. Read the discovery manifest at `$OUTPUT_DIR/00-discovery.json`. Use graph tools to find items in the codebase that are missing from the documentation. Output your gap report as the final message — do NOT write files.
+| Artifact Type | File |
+|---|---|
+| `PRODUCT` | `$OUTPUT_DIR/01-PRODUCT.md` |
+| `DATA-MODELS` | `$OUTPUT_DIR/02-DATA-MODELS.md` |
+| `API-CONTRACTS` | `$OUTPUT_DIR/03-API-CONTRACTS.md` |
+| `ARCHITECTURE` | `$OUTPUT_DIR/04-ARCHITECTURE.md` |
+| `INTERNALS` | `$OUTPUT_DIR/05-INTERNALS.md` |
 
-**Wait for all 5 to complete.** Parse gap reports from each agent's response.
+For each, spawn with:
+> Check the coverage of the {ARTIFACT_TYPE} documentation at `{artifact-file}` against the codebase at `$TARGET_PATH`. The artifact type is `{ARTIFACT_TYPE}`. Read the discovery manifest at `$OUTPUT_DIR/00-discovery.json`. Use graph tools to find items in the codebase that are missing from the documentation. Output your gap report as the final message — do NOT write files.
+
+**Wait for all 5 to complete.** Parse the JSON gap reports from each agent's response.
 
 ### Step 3b — Coverage Remediation
 
 If any gap report has gaps:
-1. For each artifact with gaps, re-spawn the original artifact agent with the gap report appended:
-   > [original prompt] IMPORTANT: A coverage check found gaps in your previous output. Address these missing items: {gap_report_json}. Read the existing artifact at `$OUTPUT_DIR/{artifact-file}` and UPDATE it to fill the gaps.
+1. For each artifact with gaps, re-spawn the original artifact agent with the same inputs as the initial run, plus the gap report appended:
+   > [original prompt] IMPORTANT: A coverage check found gaps in your previous output. Address these missing items: {gap_report_json}. Read the existing artifact at `{artifact-file}` and rewrite it to fill the gaps while preserving existing content.
 2. After remediation, re-run Step 3a for the affected artifacts only.
 3. **Max 2 remediation rounds.** After that, collect remaining gaps for the "Known Gaps" section.
 
@@ -106,7 +120,7 @@ If any gap report has gaps:
 
 Spawn `doc-consistency-checker` once:
 
-> Cross-reference all 5 documentation artifacts for consistency. Read all files in `$OUTPUT_DIR/`: `01-PRODUCT.md`, `02-DATA-MODELS.md`, `03-API-CONTRACTS.md`, `04-ARCHITECTURE.md`, `05-INTERNALS.md`, and `00-discovery.json`. Write your consistency report to `$OUTPUT_DIR/consistency-report.json`.
+> Cross-reference all 5 documentation artifacts for consistency. The output directory is `$OUTPUT_DIR/` — read `00-discovery.json`, `01-PRODUCT.md`, `02-DATA-MODELS.md`, `03-API-CONTRACTS.md`, `04-ARCHITECTURE.md`, and `05-INTERNALS.md`. Write your consistency report to `$OUTPUT_DIR/consistency-report.json`.
 
 **Wait for completion.** Read the consistency report.
 

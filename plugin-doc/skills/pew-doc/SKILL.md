@@ -17,16 +17,18 @@ Generate documentation deep enough for another LLM to use as its **sole planning
 
 ## Artifacts Generated
 
-| # | File | Agent | Purpose |
-|---|------|-------|---------|
-| 0 | `00-discovery.json` | `doc-discovery` | Codebase manifest: stack, layout, key files, graph summary |
-| 1 | `01-PRODUCT.md` | `doc-product` | Product strategy: roles, flows, domain vocab, business rules |
-| 2 | `02-DATA-MODELS.md` | `doc-data-models` | Schema, entities, DTOs, field-level lineage, ER diagrams |
-| 3 | `03-API-CONTRACTS.md` | `doc-api-contracts` | Endpoints, payloads, events, auth per endpoint |
-| 4 | `04-ARCHITECTURE.md` | `doc-architecture` | C4 diagrams, components, communication, infra, security |
-| 5 | `05-INTERNALS.md` | `doc-internals` | Code structure, all operation flows, patterns, config |
-| — | `SYSTEM-MAP.md` | `doc-system-map` | Cross-module/repo integration (multi-mode only) |
-| — | `index.md` | orchestrator | Table of contents linking all artifacts |
+The pipeline produces a bootstrap manifest plus **5 main documentation artifacts** (validated by coverage and consistency checkers):
+
+| File | Agent | Purpose |
+|------|-------|---------|
+| `00-discovery.json` | `doc-discovery` | Bootstrap: stack, layout, key files, graph summary |
+| `01-PRODUCT.md` | `doc-product` | Product strategy: roles, flows, domain vocab, business rules |
+| `02-DATA-MODELS.md` | `doc-data-models` | Schema, entities, DTOs, field-level lineage, ER diagrams |
+| `03-API-CONTRACTS.md` | `doc-api-contracts` | Endpoints, payloads, events, auth per endpoint |
+| `04-ARCHITECTURE.md` | `doc-architecture` | C4 diagrams, components, communication, infra, security |
+| `05-INTERNALS.md` | `doc-internals` | Code structure, all operation flows, patterns, config |
+| `SYSTEM-MAP.md` | `doc-system-map` | Cross-module/repo integration (multi-mode only) |
+| `index.md` | orchestrator | Table of contents linking all artifacts |
 
 ## Modes of Operation
 
@@ -40,7 +42,7 @@ Documents the current working directory. Output: `docs/`.
 ```
 /pew-doc
 ```
-When the discovery agent detects multiple modules (e.g., `apps/`, `packages/`, `services/`), it automatically switches to multi-module mode. Each module gets its own subdirectory under `docs/`, plus a `SYSTEM-MAP.md` for cross-module relationships.
+When the discovery agent detects multiple modules (e.g., `apps/`, `packages/`, `services/`) and reports them in its `modules` array, the orchestrator switches to multi-module mode. Each module gets its own subdirectory under `docs/`, plus a `SYSTEM-MAP.md` for cross-module relationships.
 
 ### Multi-Repo (folder of repos)
 ```
@@ -93,7 +95,7 @@ This skill leverages the `codebase-memory-mcp` server for graph-based code explo
 - **Discovery agent** uses `get_graph_schema` + `search_graph` for structural overview
 - **Artifact agents** use `search_graph`, `query_graph`, `trace_call_path`, `get_code_snippet` for precise symbol discovery and call chain tracing
 - **Coverage checker** compares documented items against graph nodes to find gaps
-- **System map** uses `query_graph` for `HTTP_CALLS` and `ASYNC_CALLS` edges across modules
+- **System map** uses `query_graph` for `HTTP_CALLS` and `ASYNC_CALLS` edges, `search_graph` for cross-module symbols, and `trace_call_path` for end-to-end request traces across modules
 
 If the MCP server is not available, agents fall back to Grep/Glob-based exploration (less precise but still functional).
 

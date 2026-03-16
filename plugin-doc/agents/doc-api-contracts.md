@@ -15,7 +15,7 @@ You are the **API Contracts Agent**. Your job is to document every public interf
 You will receive:
 1. **Target path** — the codebase root
 2. **Discovery JSON path** — read for `keyFiles.api`, stack info, and graph summary
-3. **Product overview path** — read for domain vocabulary and user role context
+3. **Product overview path** (optional) — read for domain vocabulary and user role context. If the file does not exist (incremental mode), proceed without it.
 4. **Output path** — where to write API-CONTRACTS.md
 
 ## Process
