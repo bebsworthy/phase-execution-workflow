@@ -78,6 +78,23 @@ Add refs via CLI: `pw.sh add-phase --number 5 --title "Read/Unread" --refs "{con
 
 Or add them directly to the tracker YAML under the phase's `refs` field.
 
+### Brief File
+
+Phases can optionally include a `brief_file` — a path to an external document (e.g., a plan-mode brainstorm, design doc, or detailed brief) that agents read as primary context alongside the short `brief` text:
+
+```yaml
+- number: 5
+  title: Read/Unread Tracking
+  brief: "Server-side read state tracking"
+  brief_file: plans/read-tracking-plan.md
+```
+
+When a phase has `brief_file`, pass the path to every step agent (IDEAS, BRD, RESEARCH) alongside the brief text. Agents read the file themselves — never embed its content in spawn prompts.
+
+Add via CLI: `pw.sh add-phase --number 5 --title "Read/Unread" --brief-file plans/read-tracking-plan.md`
+
+Or add `brief_file` directly to the tracker YAML under the phase.
+
 ### Phase Sizing
 
 Phases have a `size` field (`small | medium | large`, default: `large`) that controls which steps are mandatory:
@@ -106,18 +123,18 @@ Run `pw.sh analyze-phase --phase <N> --json` and resume from the first incomplet
 
 For each step, the orchestrator: sets status to `in_progress`, spawns the step agent(s), validates output, runs gates, sets status to `complete`, and commits. The orchestrator **never reads code or writes artifacts** — agents do that.
 
-Each agent receives: phase context (number, title, tags, brief), file paths to read, conventions file path, and relevant config fields. Pass template paths as `${CLAUDE_PLUGIN_ROOT}/templates/<STEP>.template.md`.
+Each agent receives: phase context (number, title, tags, brief, brief_file if set), file paths to read, conventions file path, and relevant config fields. Pass template paths as `${CLAUDE_PLUGIN_ROOT}/templates/<STEP>.template.md`.
 
 #### Step 1: IDEAS
 
 | Agent | Input | Output |
 | --- | --- | --- |
 | `build-feature-benchmarker` | Phase brief, tags, research path, competitors | `{config.paths.research}/benchmark-<topic>.md` |
-| `build-ideas-writer` | Phase brief, refs, retro path, benchmark doc paths, conventions | `{phase-dir}/IDEAS.md` |
+| `build-ideas-writer` | Phase brief, brief_file, refs, retro path, benchmark doc paths, conventions | `{phase-dir}/IDEAS.md` |
 
 1. `pw.sh set-step-status --phase N --step ideas --status in_progress`
 2. Unless `skip research` flag: spawn `build-feature-benchmarker` with phase brief, title, tags, list of existing files in `{config.paths.research}/`, research log path (`{config.paths.research}/research-log.md`). Config (competitors, research path) is auto-injected via hook. Wait for completion. Note output file path.
-3. Spawn `build-ideas-writer` with: phase brief, title, tags, refs paths, previous RETRO.md path (if exists), benchmark doc paths (from step 2), conventions file path, template path. Wait for completion.
+3. Spawn `build-ideas-writer` with: phase brief, brief_file path (if set), title, tags, refs paths, previous RETRO.md path (if exists), benchmark doc paths (from step 2), conventions file path, template path. Wait for completion.
 4. **Validate**: `{phase-dir}/IDEAS.md` exists and is non-empty
 5. If agent reported open questions: present them via `AskUserQuestion`, then re-spawn agent with answers
 6. Atomic commit
@@ -127,10 +144,10 @@ Each agent receives: phase context (number, title, tags, brief), file paths to r
 
 | Agent | Input | Output |
 | --- | --- | --- |
-| `build-brd-writer` | IDEAS.md path (if exists), refs, conventions | `{phase-dir}/BRD.md` |
+| `build-brd-writer` | IDEAS.md path (if exists), brief_file, refs, conventions | `{phase-dir}/BRD.md` |
 
 1. `pw.sh set-step-status --phase N --step brd --status in_progress`
-2. Spawn `build-brd-writer` with: IDEAS.md path (only if IDEAS step was not skipped), refs paths, conventions file path, phase context, template path. Wait for completion.
+2. Spawn `build-brd-writer` with: IDEAS.md path (only if IDEAS step was not skipped), brief_file path (if set), refs paths, conventions file path, phase context, template path. Wait for completion.
 3. **Validate**: `{phase-dir}/BRD.md` exists and is non-empty
 4. If agent reported open questions: present via `AskUserQuestion`, re-spawn with answers
 5. **Gate**: `pw.sh verify-traceability --phase N --from ideas --to brd` — skip this gate if IDEAS step was skipped (small phases)
@@ -143,7 +160,7 @@ Each agent receives: phase context (number, title, tags, brief), file paths to r
 | --- | --- | --- |
 | `build-ux-researcher` (if frontend) | BRD.md, phase context | `{config.paths.research}/ux-<theme>.md` |
 | `build-ux-designer` (if frontend) | BRD.md, UX research output | `{phase-dir}/DESIGN.md` |
-| `build-research-writer` | BRD.md, refs, UX docs, arch-ref, conventions | `{phase-dir}/RESEARCH.md` |
+| `build-research-writer` | BRD.md, brief_file, refs, UX docs, arch-ref, conventions | `{phase-dir}/RESEARCH.md` |
 
 1. `pw.sh set-step-status --phase N --step research --status in_progress`
 2. If phase has `frontend` tag and size is `large`:
@@ -309,8 +326,9 @@ This step stays with the orchestrator — it is coordination work (dispatching e
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh <command>
   set-step-status --phase N --step S --status S   # auto-inits phase, auto-closes on check complete
   analyze-phase --phase N [--json]
-  add-phase --number N --title T [--brief "..."] [--depends-on X,Y] [--tags a,b] [--size small|medium|large]
+  add-phase --number N --title T [--brief "..."] [--brief-file PATH] [--depends-on X,Y] [--tags a,b] [--size small|medium|large]
   list-phases [--status S] [--json]
+  next-phase-number                              # output next available integer phase number
   verify-traceability --phase N --from S --to S    # exit 1 if missing IDs found
   check-dependencies --phase N [--through S]   # --through: deps completed through step S (not fully complete)
   phase-diff --phase N                        # uses three-dot diff; assumes linear history from phase start
@@ -400,7 +418,7 @@ Config fields (`config.*`) are **auto-injected** via the `SubagentStart` hook �
 
 When spawning any sub-agent, pass only:
 
-1. **Phase context**: number, title, tags, brief, phase directory path
+1. **Phase context**: number, title, tags, brief, brief_file (if set), phase directory path
 2. **File paths**: input artifact paths (not content), output path, template path
 3. **Refs paths**: if the phase has refs
 

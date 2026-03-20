@@ -63,7 +63,8 @@ def _add_phase(repo: Path, number: int | float = 24, title: str = "Search",
                depends_on: str | None = None,
                brief: str | None = "Add search",
                refs: str | None = None,
-               size: str | None = None) -> int:
+               size: str | None = None,
+               brief_file: str | None = None) -> int:
     """Helper to add a phase."""
     cli = ["add-phase", "--number", str(number), "--title", title]
     if tags:
@@ -76,6 +77,8 @@ def _add_phase(repo: Path, number: int | float = 24, title: str = "Search",
         cli += ["--refs", refs]
     if size:
         cli += ["--size", size]
+    if brief_file:
+        cli += ["--brief-file", brief_file]
     code, _ = _run(repo, *cli)
     return code
 
@@ -215,6 +218,49 @@ class TestAddPhase:
         _add_phase(repo)
         data = pw.load_tracker(repo)
         assert data["phases"][0]["refs"] == []
+
+    def test_brief_file_stored(self, repo: Path):
+        _add_phase(repo, brief_file="plans/my-plan.md")
+        data = pw.load_tracker(repo)
+        assert data["phases"][0]["brief_file"] == "plans/my-plan.md"
+
+    def test_brief_file_default_empty(self, repo: Path):
+        _add_phase(repo)
+        data = pw.load_tracker(repo)
+        assert data["phases"][0]["brief_file"] == ""
+
+
+# ---------------------------------------------------------------------------
+# Commands: next-phase-number
+# ---------------------------------------------------------------------------
+
+class TestNextPhaseNumber:
+    def test_no_phases(self, repo: Path):
+        code, out = _run(repo, "next-phase-number")
+        assert code == 0
+        assert out.strip() == "1"
+
+    def test_sequential_phases(self, repo: Path):
+        _add_phase(repo, 1, "First")
+        _add_phase(repo, 2, "Second")
+        _add_phase(repo, 3, "Third")
+        code, out = _run(repo, "next-phase-number")
+        assert code == 0
+        assert out.strip() == "4"
+
+    def test_with_decimal_phases(self, repo: Path):
+        _add_phase(repo, 1, "First")
+        _add_phase(repo, 2.5, "Middle")
+        _add_phase(repo, 3, "Third")
+        code, out = _run(repo, "next-phase-number")
+        assert code == 0
+        assert out.strip() == "4"
+
+    def test_single_phase(self, repo: Path):
+        _add_phase(repo, 5, "Only")
+        code, out = _run(repo, "next-phase-number")
+        assert code == 0
+        assert out.strip() == "6"
 
 
 # ---------------------------------------------------------------------------

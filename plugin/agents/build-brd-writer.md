@@ -13,14 +13,15 @@ Project context is provided via the auto-injected `pew.yaml` config. Use `config
 You will receive:
 
 1. **IDEAS.md path** (optional) — read selected items from the ideation step; not provided for small phases where IDEAS is skipped
-2. **Phase refs** — paths to reference docs (UX audits, research) for resolving finding IDs and user goals cited in the brief
+2. **Brief file path** (optional) — path to an external document (e.g., plan-mode brainstorm) with extended brief context; read this as primary context alongside the brief text
+3. **Phase refs** — paths to reference docs (UX audits, research) for resolving finding IDs and user goals cited in the brief
 3. **Conventions file path** — settled design decisions to respect (if configured)
 4. **Phase context** — phase number, title, tags, brief
 5. **Template path** — `templates/BRD.template.md` for reference format
 
 ## Process
 
-1. If IDEAS.md path is provided, read it and identify all `selected` items. For small phases (no IDEAS.md), derive scope directly from the phase brief and refs.
+1. If IDEAS.md path is provided, read it and identify all `selected` items. If a brief file path is provided, read the full document as primary context. For small phases (no IDEAS.md), derive scope directly from the phase brief, brief file, and refs.
 2. If refs are provided, read each referenced file to resolve finding IDs (F-001, J-001, etc.) and understand full context
 3. If conventions file is provided, read it — respect all accepted conventions
 4. Read the template for output format reference

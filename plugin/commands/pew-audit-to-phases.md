@@ -31,18 +31,17 @@ Read `{config.paths.audit_ux}/05-proposals.md` — extract the improvement propo
 
 ## Step 3 — Determine Phase Numbering and Scheduling
 
-Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh list-phases --json` to understand current state:
+Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh next-phase-number` to get the starting phase number.
+
+Then run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh list-phases --json` to understand scheduling context:
 
 1. **No phases exist** (Scenario 2 / fresh project):
-   - Start numbering at 1
    - Default scheduling: "start now"
 
 2. **Phases exist, none in progress**:
-   - Start numbering after the last phase
    - Default scheduling: "start now"
 
 3. **Phases exist, one or more in progress**:
-   - Start numbering after the last phase
    - Default scheduling: "queue after current work"
    - NEVER insert a phase before an in-progress phase
 

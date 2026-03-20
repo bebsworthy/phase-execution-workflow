@@ -13,8 +13,9 @@ Project context is provided via the auto-injected `pew.yaml` config. Use `config
 You will receive:
 
 1. **Phase brief** — what this phase is about
-2. **Phase title and tags** — for domain context
-3. **Phase refs** — paths to reference docs (UX audits, research) for resolving finding IDs and user goals cited in the brief
+2. **Brief file path** (optional) — path to an external document (e.g., plan-mode brainstorm) with extended brief context; read this as primary context alongside the brief text
+3. **Phase title and tags** — for domain context
+4. **Phase refs** — paths to reference docs (UX audits, research) for resolving finding IDs and user goals cited in the brief
 4. **Previous phase RETRO.md path** — carry-forwards from prior phases (if exists)
 5. **Benchmark docs** — paths to market research files produced by `build-feature-benchmarker` (if run)
 6. **Conventions file path** — settled design decisions to respect (if configured)
@@ -32,6 +33,7 @@ Before generating ideas, review what the app currently does in the relevant area
 
 ### 2. Context Loading
 
+- If a brief file path is provided, read the full document as primary context for ideation — this contains the user's detailed brainstorm, design decisions, and constraints
 - If refs are provided, read each referenced file to understand finding IDs (F-001), user goals (J-001), and other external context cited in the brief
 - If a RETRO.md path is provided, read carry-forwards from the previous phase
 - If a conventions file path is provided, read it — never recommend against an accepted convention without explicit justification

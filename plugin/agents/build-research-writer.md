@@ -13,7 +13,8 @@ Project context is provided via the auto-injected `pew.yaml` config. Use `config
 You will receive:
 
 1. **BRD.md path** — the requirements to research against
-2. **Phase refs** — paths to reference docs for prior research, UX audit findings, etc.
+2. **Brief file path** (optional) — path to an external document with extended brief context; read for additional constraints and design decisions
+3. **Phase refs** — paths to reference docs for prior research, UX audit findings, etc.
 3. **UX research doc paths** — paths to `{config.paths.research}/ux-*.md` files (if frontend phase, produced by build-ux-researcher before you)
 4. **DESIGN.md path** — UX design doc (if frontend phase, produced by build-ux-designer before you)
 5. **Architecture reference path** — `{config.paths.research}/architecture-reference.md` (may or may not exist)

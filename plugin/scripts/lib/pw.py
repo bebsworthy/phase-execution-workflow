@@ -154,6 +154,7 @@ def load_tracker(root: Path, config: dict | None = None) -> dict:
     for phase in data["phases"]:
         phase["number"] = _norm_num(phase["number"])
         phase.setdefault("brief", "")
+        phase.setdefault("brief_file", "")
         phase.setdefault("refs", [])
         phase.setdefault("summary", "")
         phase.setdefault("depends_on", [])
@@ -394,6 +395,8 @@ def cmd_add_phase(args: argparse.Namespace) -> int:
     if args.refs:
         refs = [x.strip() for x in args.refs.split(",") if x.strip()]
 
+    brief_file = args.brief_file or ""
+
     size = args.size or "large"
     skip_steps = SIZE_SKIP_STEPS.get(size, set())
 
@@ -401,6 +404,7 @@ def cmd_add_phase(args: argparse.Namespace) -> int:
         "number": _norm_num(args.number),
         "title": args.title,
         "brief": args.brief or "",
+        "brief_file": brief_file,
         "refs": refs,
         "status": "not_started",
         "summary": "",
@@ -447,6 +451,19 @@ def cmd_list_phases(args: argparse.Namespace) -> int:
         print(f"Phase {phase['number']}: {phase['title']} [{phase['status']}]"
               + (f" deps=[{deps}]" if deps else "")
               + (f" tags=[{tags}]" if tags else ""))
+    return 0
+
+
+def cmd_next_phase_number(args: argparse.Namespace) -> int:
+    root = Path(args.repo_root).resolve() if args.repo_root else repo_root_from_script()
+    config = load_config(root)
+    data = load_tracker(root, config)
+    phases = data.get("phases", [])
+    if not phases:
+        print(1)
+    else:
+        max_num = max(p["number"] for p in phases)
+        print(_norm_num(int(max_num) + 1))
     return 0
 
 
@@ -1092,6 +1109,8 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("--brief", default=None, help="Phase brief: what this phase delivers and why.")
     add.add_argument("--depends-on", default=None, help="Comma-separated dependency phase numbers.")
     add.add_argument("--tags", default=None, help="Comma-separated tags (e.g., frontend,backend).")
+    add.add_argument("--brief-file", default=None,
+                     help="Path to an external document (e.g., plan file) to use as extended brief context.")
     add.add_argument("--refs", default=None,
                      help="Comma-separated reference doc paths (relative to repo root) for agents to read.")
     add.add_argument("--size", default=None, choices=sorted(VALID_PHASE_SIZES),
@@ -1146,6 +1165,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     gvc = sub.add_parser("generate-verify-commands", help="Output verify/e2e commands from config.")
     gvc.set_defaults(func=cmd_generate_verify_commands)
+
+    npn = sub.add_parser("next-phase-number", help="Output the next available integer phase number.")
+    npn.set_defaults(func=cmd_next_phase_number)
 
     bv = sub.add_parser("bump-version", help="Bump plugin version in marketplace.json.")
     bv.add_argument("--bump", default="patch", choices=["patch", "minor", "major"],
