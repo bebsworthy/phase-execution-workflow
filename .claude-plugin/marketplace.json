@@ -11,7 +11,7 @@
       "name": "pew",
       "source": "./plugin",
       "description": "7-step delivery loop with YAML tracking, quality gates, council review, and sub-agents",
-      "version": "4.0.4",
+      "version": "4.0.6",
       "keywords": [
         "workflow",
         "phase",
@@ -24,7 +24,7 @@
     {
       "name": "pew-doc",
       "source": "./plugin-doc",
-      "description": "Generate comprehensive application documentation from codebase analysis — product overview, architecture, internals, API contracts, and data models",
+      "description": "Generate comprehensive application documentation from codebase analysis \u2014 product overview, architecture, internals, API contracts, and data models",
       "version": "1.0.0",
       "keywords": [
         "documentation",
