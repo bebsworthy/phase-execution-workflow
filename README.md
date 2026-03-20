@@ -94,12 +94,32 @@ Standalone 5-phase audit targeting systemic quality issues in LLM-generated test
 
 Output: ``{config.paths.audit_test}/`` directory with per-phase reports and a synthesized playbook.
 
+### `/pew-groom` — Automated Technical Grooming
+
+Standalone multi-phase issue analysis that bridges Product Owners and Tech Leads. Reads a ticket from any issue tracker, analyzes it against multiple repositories, and produces a grounded technical assessment. Spawns 11 specialist agents (`groom-*`) across 6 phases:
+
+1. **Intake** — Read issue from tracker (Jira, Linear, YouTrack, GitHub, GitLab via MCP/CLI), extract all content including comments and attachments, detect re-runs
+2. **Repo Discovery** — Clone/checkout impacted repos, discover transitive dependencies, build or reuse cached architecture snapshots
+3. **Deep Analysis** (4 agents in parallel) — Code impact tracing, blocker/risk detection, specification gap analysis with clarity grading (A–F), test plan + Definition of Done
+4. **Estimation** — Effort estimate with human-velocity multiplier (1.9–2.3x raw dev time), accounting for testing, code review, deployment, and UAT. Mandatory breakdown if >2 weeks
+5. **Council Review** (2 agents in parallel) — Completeness review (missed repos, code paths, edge cases) and feasibility review (approach soundness, estimate realism, alternatives)
+6. **Synthesis** — Merge all analysis into a single editable `analysis.md` ready to post as a tracker comment
+
+Key features:
+- **Tracker-agnostic** — works with any tracker that has an MCP server or CLI; falls back to manual paste
+- **Multi-repo** — operates in a standalone workspace, clones repos as needed, discovers cross-repo dependencies
+- **Knowledge persistence** — caches architecture snapshots between runs for faster sequential grooming
+- **Re-run aware** — detects when re-analyzing the same issue, focuses on new comments/changes
+- **Complexity-adjusted** — adjusts analysis depth from XS (trivial) to XL (epic requiring breakdown)
+
+Output: `groom/{issue-id}/` directory with per-phase reports and a final `analysis.md`.
+
 ## What's included
 
 | Component              | Description                                                                                                                                                                                                                     |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **5 skills + 4 commands** | Skills: `/pew-build`, `/pew-init`, `/pew-vibe`, `/pew-ux-audit`, `/pew-test-audit`. Commands: `/pew-vibe` (start vibe phase), `/pew-ux-audit` (run UX audit), `/pew-test-audit` (run test audit), `/pew-audit-to-phases` (convert findings to phases) |
-| **34 agents**          | Step writers (5): ideas, BRD, research, spec, plan. Research (3): feature benchmarker, UX researcher, UX designer. Build (2): frontend/backend developers. Vibe (1): vibe synthesizer. Council (6): security, architecture, testing, test-quality, frontend, backend. Verification (2): alignment checker, product reviewer. UX audit (5): goals, impl, research, eval, proposals. Test audit (10): inventory, tautological, mocking, framework, coverage, maintainability, flaky, synthesis, remediation, architecture. See [agents/README.md](agents/README.md) |
+| **6 skills + 5 commands** | Skills: `/pew-build`, `/pew-init`, `/pew-vibe`, `/pew-ux-audit`, `/pew-test-audit`, `/pew-groom`. Commands: `/pew-vibe`, `/pew-ux-audit`, `/pew-test-audit`, `/pew-audit-to-phases`, `/pew-groom` |
+| **45 agents**          | Step writers (5): ideas, BRD, research, spec, plan. Research (3): feature benchmarker, UX researcher, UX designer. Build (2): frontend/backend developers. Vibe (1): vibe synthesizer. Council (6): security, architecture, testing, test-quality, frontend, backend. Verification (2): alignment checker, product reviewer. UX audit (5): goals, impl, research, eval, proposals. Test audit (10): inventory, tautological, mocking, framework, coverage, maintainability, flaky, synthesis, remediation, architecture. Groom (11): intake, repo-scout, arch-snapshot, code-analyst, blocker-detector, spec-evaluator, test-planner, estimator, council-completeness, council-feasibility, synthesizer. See [agents/README.md](plugin/agents/README.md) |
 | **Review profiles**    | Composable tech best practices (fundamental, TypeScript, React, NestJS, TanStack, Tailwind, SPA, REST API, PostgreSQL) — auto-detected and injected                                                                             |
 | **Templates**          | Reference templates for IDEAS, BRD, RESEARCH, SPEC, PLAN, DECISIONS (vibe mode), RETRO artifacts                                                                                                                                                              |
 | **Helper script**      | `pw.sh` — phase tracker management (YAML-based), traceability verification, config validation, profile resolution                                                                                                                |
@@ -147,6 +167,7 @@ Not every change needs the full 7-step loop. Use `--size` when adding phases:
 /pew-ux-audit                  # run full 5-phase UX/UI audit
 /pew-test-audit                # run 10-agent test suite quality audit
 /pew-audit-to-phases           # convert audit findings into PEW phases
+/pew-groom PROJ-123            # groom a tracker issue (any tracker with MCP/CLI)
 ```
 
 ## Requirements
