@@ -2,7 +2,7 @@
 
 ## What this is
 
-A Claude Code plugin with 5 skills, 4 commands, 34 agents. See [README.md](README.md) for user-facing docs.
+A Claude Code plugin with 6 skills, 5 commands, 45 agents. See [README.md](README.md) for user-facing docs.
 
 ## Dev workflow
 
@@ -15,9 +15,9 @@ A Claude Code plugin with 5 skills, 4 commands, 34 agents. See [README.md](READM
 
 ```
 plugin/              → The installable plugin (marketplace.json source points here)
-  skills/            → Skill definitions (pew-build, pew-init, pew-vibe, pew-ux-audit, pew-test-audit)
-  commands/          → Command orchestrators (pew-vibe, pew-ux-audit, pew-test-audit, pew-audit-to-phases)
-  agents/            → 34 sub-agent definitions (build-*, council-*, ux-audit-*, test-audit-*)
+  skills/            → Skill definitions (pew-build, pew-init, pew-vibe, pew-ux-audit, pew-test-audit, pew-groom)
+  commands/          → Command orchestrators (pew-vibe, pew-ux-audit, pew-test-audit, pew-audit-to-phases, pew-groom)
+  agents/            → 45 sub-agent definitions (build-*, council-*, ux-audit-*, test-audit-*, groom-*)
   scripts/lib/       → pw.py (phase tracker CLI) + test_pw.py + .venv/
   scripts/           → pw.sh (venv wrapper), inject-config.sh (SubagentStart hook), pre-push-bump
   templates/         → Reference templates for phase artifacts (IDEAS, BRD, SPEC, etc.)
@@ -28,7 +28,7 @@ plugin/              → The installable plugin (marketplace.json source points 
 
 ## Key conventions
 
-- **Agent naming**: `build-*` (step writers, devs, research), `council-*` (reviewers), `test-audit-*`, `ux-audit-*`
+- **Agent naming**: `build-*` (step writers, devs, research), `council-*` (reviewers), `test-audit-*`, `ux-audit-*`, `groom-*` (technical grooming)
 - **All agents**: Must have completion signal `[agent-name] COMPLETE ✓`, must say "do NOT commit" if they have Write/Edit tools
 - **Config injection**: SubagentStart hook (`inject-config.sh`) auto-injects `pew.yaml` config into agents. Don't pass config manually in spawn prompts.
 - **Sub-agents can't spawn sub-agents** (Claude Code hard limit). All agent spawning from orchestrator only.
@@ -43,4 +43,4 @@ See [PATTERNS.md](PATTERNS.md) for orchestration patterns, hard constraints, and
 
 All in `plugin/scripts/lib/test_pw.py`. Run with `.venv/bin/python3 -m pytest test_pw.py` from that directory. The venv is auto-created by `pw.sh` on first run.
 
-When adding features to `pw.py`, add corresponding tests. Current: 119 tests.
+When adding features to `pw.py`, add corresponding tests. Current: 128 tests.

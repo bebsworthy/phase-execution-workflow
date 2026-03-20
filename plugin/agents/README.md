@@ -76,6 +76,22 @@ The main agent MAY spawn these as needed, and MAY define additional phase-specif
 | [test-audit-remediation](test-audit-remediation.md) | inherit | Phase 4: concrete code fixes with before/after                       | Synthesis + source/test files                         | `{config.paths.audit_test}/09-remediation.md`                             |
 | [test-audit-architecture](test-audit-architecture.md) | inherit | Phase 5: test architecture redesign & playbook                     | All previous outputs                                  | `{config.paths.audit_test}/10-architecture.md`                            |
 
+### Groom Agents (spawned by groom command orchestrator)
+
+| Agent                                           | Model   | Phase                                                                    | Input                                                 | Output                                                      |
+| ----------------------------------------------- | ------- | ------------------------------------------------------------------------ | ----------------------------------------------------- | ----------------------------------------------------------- |
+| [groom-intake](groom-intake.md)                 | inherit | Phase 1: issue reading, content extraction, re-run detection             | Issue ID, MCP/CLI tools                               | `groom/{issue-id}/01-intake.json`                           |
+| [groom-repo-scout](groom-repo-scout.md)         | inherit | Phase 2: repo discovery, checkout, dependency analysis                   | Intake + groom.yaml                                   | `groom/{issue-id}/02-repos.json`                            |
+| [groom-arch-snapshot](groom-arch-snapshot.md)    | inherit | Phase 2: architecture snapshot with caching                              | Repos + knowledge cache                               | `groom/{issue-id}/03-architecture.md`                       |
+| [groom-code-analyst](groom-code-analyst.md)     | inherit | Phase 3: code path tracing, impact map (parallel)                        | Intake + repos + architecture                         | `groom/{issue-id}/04-code-impact.md`                        |
+| [groom-blocker-detector](groom-blocker-detector.md) | inherit | Phase 3: blockers, tech debt, risks (parallel)                       | Intake + repos + architecture                         | `groom/{issue-id}/05-blockers.md`                           |
+| [groom-spec-evaluator](groom-spec-evaluator.md) | inherit | Phase 3: specification gaps, clarity grading, questions (parallel)        | Intake + architecture                                 | `groom/{issue-id}/06-spec-evaluation.md`                    |
+| [groom-test-planner](groom-test-planner.md)     | inherit | Phase 3: test plan + Definition of Done (parallel)                       | Intake + repos + architecture                         | `groom/{issue-id}/07-test-plan.md`                          |
+| [groom-estimator](groom-estimator.md)           | inherit | Phase 4: effort estimation with human-velocity multiplier                | All Phase 1-3 outputs                                 | `groom/{issue-id}/08-estimation.md`                         |
+| [groom-council-completeness](groom-council-completeness.md) | inherit | Phase 5: completeness review (parallel)                      | All Phase 1-4 outputs                                 | `groom/{issue-id}/09-review-completeness.md`                |
+| [groom-council-feasibility](groom-council-feasibility.md) | inherit | Phase 5: feasibility review (parallel)                         | All Phase 1-4 outputs                                 | `groom/{issue-id}/10-review-feasibility.md`                 |
+| [groom-synthesizer](groom-synthesizer.md)       | inherit | Phase 6: merge all into final analysis.md                                | All Phase 1-5 outputs                                 | `groom/{issue-id}/analysis.md`                              |
+
 ### Vibe Mode Agent (spawned by vibe command orchestrator)
 
 | Agent                                           | Model   | When to Use                                                              | Input                                                 | Output                                                      |
