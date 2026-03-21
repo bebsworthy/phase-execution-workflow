@@ -11,7 +11,7 @@
       "name": "pew",
       "source": "./plugin",
       "description": "7-step delivery loop with YAML tracking, quality gates, council review, and sub-agents",
-      "version": "4.0.6",
+      "version": "4.0.7",
       "keywords": [
         "workflow",
         "phase",
