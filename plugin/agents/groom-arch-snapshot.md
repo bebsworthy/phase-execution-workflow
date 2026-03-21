@@ -101,4 +101,6 @@ Write a consolidated architecture overview to the issue-specific directory. This
 
 **Consolidated overview**: Save to the designated output path as markdown with per-repo sections.
 
-Signal completion with `[groom-arch-snapshot] COMPLETE`.
+Do NOT commit any changes.
+
+Signal completion with `[groom-arch-snapshot] COMPLETE ✓`.

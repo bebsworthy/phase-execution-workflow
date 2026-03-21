@@ -1,7 +1,7 @@
 ---
 name: groom-code-analyst
 description: Trace code paths impacted by the issue, identify files/functions/modules to change across repos
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Write
 skills:
   - pew-groom
 ---
@@ -71,4 +71,6 @@ Write a markdown report to the designated output path with:
 4. **Implementation Sequence**: recommended order of changes
 5. **Unknowns**: areas where code paths couldn't be fully traced
 
-Signal completion with `[groom-code-analyst] COMPLETE`.
+Do NOT commit any changes.
+
+Signal completion with `[groom-code-analyst] COMPLETE ✓`.

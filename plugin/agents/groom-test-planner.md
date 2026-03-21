@@ -1,7 +1,7 @@
 ---
 name: groom-test-planner
 description: Design test plan and Definition of Done for the issue based on requirements and architecture
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Write
 skills:
   - pew-groom
 ---
@@ -92,4 +92,6 @@ Write a markdown report to the designated output path:
 4. **UAT Scenarios**: step-by-step flows for PO verification
 5. **Definition of Done**: checkboxed checklist, adjusted for complexity
 
-Signal completion with `[groom-test-planner] COMPLETE`.
+Do NOT commit any changes.
+
+Signal completion with `[groom-test-planner] COMPLETE ✓`.

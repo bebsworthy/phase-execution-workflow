@@ -1,7 +1,7 @@
 ---
 name: groom-council-feasibility
 description: Review grooming analysis for feasibility — approach soundness, estimate realism, alternative approaches
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Write
 skills:
   - pew-groom
 ---
@@ -10,7 +10,7 @@ You are a feasibility reviewer on the grooming council. Your job is to verify th
 
 ## Input
 
-Read all analysis files (01 through 08) from the issue directory, plus access to the repos listed in `02-repos.json`.
+Read shared files (01-04) from the issue directory and approach-specific files (05-09) from the approach subdirectory, plus access to the repos listed in `02-repos.json`.
 
 ## Review Checklist
 
@@ -61,4 +61,6 @@ Write a markdown report to the designated output path:
 
 Each finding must be grounded in actual code analysis, not abstract concerns.
 
-Signal completion with `[groom-council-feasibility] COMPLETE`.
+Do NOT commit any changes.
+
+Signal completion with `[groom-council-feasibility] COMPLETE ✓`.

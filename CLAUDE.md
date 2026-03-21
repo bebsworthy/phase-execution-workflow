@@ -2,7 +2,7 @@
 
 ## What this is
 
-A Claude Code plugin with 6 skills, 5 commands, 45 agents. See [README.md](README.md) for user-facing docs.
+A Claude Code plugin with 6 skills, 5 commands, 46 agents. See [README.md](README.md) for user-facing docs.
 
 ## Dev workflow
 

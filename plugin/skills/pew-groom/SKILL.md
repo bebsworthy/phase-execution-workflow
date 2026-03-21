@@ -118,28 +118,47 @@ The groom skill operates in a standalone workspace directory (not necessarily a 
 
 ```
 {workspace}/
-├── groom.yaml                    # Config: repos, tracker type, settings
+├── groom.yaml                    # Config: repos, tracker type, settings (see template)
 ├── groom/
 │   ├── knowledge/                # Persistent across /clear
 │   │   └── {repo-name}/
-│   │       ├── architecture.json # Cached architecture snapshot
-│   │       └── conventions.md    # Detected coding conventions
+│   │       └── architecture.json # Cached architecture snapshot
 │   └── {issue-id}/              # Per-issue analysis
-│       ├── 01-intake.json
+│       ├── 01-intake.json       # Shared (approach-independent)
 │       ├── 02-repos.json
 │       ├── 03-architecture.md
-│       ├── 04-code-impact.md
-│       ├── 05-blockers.md
-│       ├── 06-spec-evaluation.md
-│       ├── 07-test-plan.md
-│       ├── 08-estimation.md
-│       ├── 09-review-completeness.md
-│       ├── 10-review-feasibility.md
-│       ├── analysis.md           # FINAL OUTPUT
-│       └── .meta.json            # Run history for re-run detection
+│       ├── 04-approaches.md
+│       ├── {approach-slug}/     # Per-approach deep analysis
+│       │   ├── 05-code-impact.md
+│       │   ├── 06-blockers.md
+│       │   ├── 07-spec-evaluation.md
+│       │   ├── 08-test-plan.md
+│       │   ├── 09-estimation.md
+│       │   ├── 10-review-completeness.md
+│       │   ├── 11-review-feasibility.md
+│       │   └── analysis.md      # FINAL OUTPUT for this approach
+│       ├── {other-approach}/    # Additional approaches (on demand)
+│       │   └── ...
+│       └── .meta.json           # Run history (per-approach)
 └── repos/                        # Cloned repositories
     └── {repo-name}/
 ```
+
+### groom.yaml Schema
+
+```yaml
+repos:
+  - name: string       # Short name (used as directory name under repos/)
+    url: string        # Git clone URL
+    branch: string     # Branch to checkout (default: main)
+tracker:
+  type: string         # linear | jira | youtrack | github | gitlab
+  project: string      # Project key or identifier
+settings:
+  max_repos: number    # Maximum repos to analyze (default: 10)
+```
+
+A template is available at `plugin/templates/groom.yaml.example`.
 
 ---
 
@@ -156,6 +175,7 @@ When the analysis directory `groom/{issue-id}/` already exists:
 | No changes since last run | Skip analysis, point user to existing `analysis.md` |
 | New comments only | Focused re-analysis: intake extracts new comments, Phase 3-6 agents instructed to address new information and update analysis |
 | Description changed | Full re-analysis (description change = scope change) |
+| Different approach requested | Reuse shared files (01-04), create new approach subdir, run Phase 3-6 only |
 | Force re-run (user request) | Full re-analysis regardless of changes |
 
 ---
@@ -165,13 +185,13 @@ When the analysis directory `groom/{issue-id}/` already exists:
 All groom agents must end their output with:
 
 ```
-[groom-<name>] COMPLETE
+[groom-<name>] COMPLETE ✓
 ```
 
 If the agent has unresolvable questions that block analysis:
 
 ```
-[groom-<name>] COMPLETE WITH QUESTIONS
+[groom-<name>] COMPLETE WITH QUESTIONS ✓
 OPEN QUESTIONS:
 1. Question text?
 2. Question text?

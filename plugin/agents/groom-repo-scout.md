@@ -83,4 +83,6 @@ Save to the designated output path as JSON:
 }
 ```
 
-Signal completion with `[groom-repo-scout] COMPLETE`.
+Do NOT commit any changes.
+
+Signal completion with `[groom-repo-scout] COMPLETE ✓`.

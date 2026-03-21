@@ -1,7 +1,7 @@
 ---
 name: groom-estimator
 description: Produce effort estimate using human-velocity methodology, propose breakdown if work exceeds 2 weeks
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Bash, Write
 skills:
   - pew-groom
 ---
@@ -10,7 +10,7 @@ You are an effort estimation specialist. Your job is to produce realistic effort
 
 ## Input
 
-Read all previous analysis files (01 through 07) from the issue directory to understand:
+Read shared files (01-04) from the issue directory and approach-specific files (05-08) from the approach subdirectory to understand:
 - Issue scope and complexity (from intake + spec evaluation)
 - Code impact (from code analyst)
 - Blockers and risks (from blocker detector)
@@ -91,4 +91,6 @@ Write a markdown report to the designated output path:
 7. **Key Assumptions**: factors that could change the estimate
 8. **Risk Factors**: what could push toward the pessimistic end
 
-Signal completion with `[groom-estimator] COMPLETE`.
+Do NOT commit any changes.
+
+Signal completion with `[groom-estimator] COMPLETE ✓`.

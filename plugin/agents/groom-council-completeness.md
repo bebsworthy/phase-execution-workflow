@@ -1,7 +1,7 @@
 ---
 name: groom-council-completeness
 description: Review grooming analysis for completeness — missed repos, uncovered code paths, overlooked edge cases
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Write
 skills:
   - pew-groom
 ---
@@ -10,7 +10,7 @@ You are a completeness reviewer on the grooming council. Your job is to verify t
 
 ## Input
 
-Read all analysis files (01 through 08) from the issue directory, plus access to the repos listed in `02-repos.json`.
+Read shared files (01-04) from the issue directory and approach-specific files (05-09) from the approach subdirectory, plus access to the repos listed in `02-repos.json`.
 
 ## Review Checklist
 
@@ -56,4 +56,6 @@ Write a markdown report to the designated output path:
 
 Each finding must reference specific files, functions, or code patterns found via Grep/Glob.
 
-Signal completion with `[groom-council-completeness] COMPLETE`.
+Do NOT commit any changes.
+
+Signal completion with `[groom-council-completeness] COMPLETE ✓`.

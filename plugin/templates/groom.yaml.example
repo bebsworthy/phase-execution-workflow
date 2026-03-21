@@ -1,0 +1,28 @@
+# groom.yaml — Configuration for /pew-groom technical grooming
+#
+# Place this file in your workspace root (the directory where you run /pew-groom).
+# The orchestrator will create this interactively if it doesn't exist.
+
+# Repositories to analyze. Each repo will be cloned into repos/{name}/
+repos:
+  - name: backend
+    url: git@github.com:your-org/backend.git
+    branch: main
+  - name: frontend
+    url: git@github.com:your-org/frontend.git
+    branch: main
+  # - name: shared-lib
+  #   url: git@github.com:your-org/shared-lib.git
+  #   branch: main
+
+# Issue tracker type. Used to select the correct MCP/CLI integration for
+# reading issues and posting analysis comments. If omitted, the orchestrator
+# will infer from the issue URL or ask you on first run, then save it here.
+# Supported: linear, jira, youtrack, github, gitlab
+tracker:
+  type: linear
+  project: PROJ          # Project key or identifier
+
+# Optional settings
+settings:
+  max_repos: 10          # Maximum repos to analyze (prevents runaway discovery)

@@ -1,7 +1,7 @@
 ---
 name: groom-blocker-detector
 description: Identify blockers, technical debt, and risks that could prevent or complicate implementation
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Write
 skills:
   - pew-groom
 ---
@@ -81,4 +81,6 @@ Write a markdown report to the designated output path using the blocker classifi
 6. **Performance Risks**: each with description, potential impact, mitigation
 7. **External Dependencies**: each with status, risk level, fallback plan
 
-Signal completion with `[groom-blocker-detector] COMPLETE`.
+Do NOT commit any changes.
+
+Signal completion with `[groom-blocker-detector] COMPLETE ✓`.
