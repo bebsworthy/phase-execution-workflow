@@ -21,10 +21,12 @@ fi
 
 # Read remote and ref info from stdin (standard pre-push hook protocol)
 RANGE=""
+REMOTE_SHA=""
 while read -r local_ref local_sha remote_ref remote_sha; do
   if [[ "$local_sha" == "0000000000000000000000000000000000000000" ]]; then
     continue
   fi
+  REMOTE_SHA="$remote_sha"
   if [[ "$remote_sha" == "0000000000000000000000000000000000000000" ]]; then
     RANGE="$local_sha"
   else
@@ -41,30 +43,45 @@ NEEDS_BUMP=false
 # --- Check plugin/ (PEW) ---
 PEW_JSON="$REPO_ROOT/plugin/.claude-plugin/plugin.json"
 if [[ -f "$PEW_JSON" ]]; then
-  # Did plugin/ files change?
+  # Did plugin/ files change (excluding plugin.json itself)?
   PEW_CHANGED=$(git diff --name-only "$RANGE" -- "plugin/" | grep -v "plugin/.claude-plugin/plugin.json" | head -1 || true)
-  # Was its version already bumped?
-  PEW_BUMPED=$(git diff --name-only "$RANGE" -- "plugin/.claude-plugin/plugin.json" | head -1 || true)
 
-  if [[ -n "$PEW_CHANGED" && -z "$PEW_BUMPED" ]]; then
-    # Bump PEW version
-    "$REPO_ROOT/plugin/scripts/pw.sh" bump-version --bump patch >/dev/null 2>&1
-    git -C "$REPO_ROOT" add "$PEW_JSON" "$MARKETPLACE"
-    NEEDS_BUMP=true
+  if [[ -n "$PEW_CHANGED" ]]; then
+    # Compare actual version strings instead of just checking if file changed
+    local_ver=$(grep -o '"version": "[^"]*"' "$PEW_JSON" | head -1 | cut -d'"' -f4)
+    if [[ "$REMOTE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+      remote_ver=""
+    else
+      remote_ver=$(git show "$REMOTE_SHA:plugin/.claude-plugin/plugin.json" 2>/dev/null | grep -o '"version": "[^"]*"' | head -1 | cut -d'"' -f4 || echo "")
+    fi
+
+    if [[ "$local_ver" == "$remote_ver" ]]; then
+      # Version unchanged — bump needed
+      "$REPO_ROOT/plugin/scripts/pw.sh" bump-version --bump patch >/dev/null 2>&1
+      git -C "$REPO_ROOT" add "$PEW_JSON" "$MARKETPLACE"
+      NEEDS_BUMP=true
+    fi
   fi
 fi
 
 # --- Check plugin-doc/ (pew-doc) ---
 DOC_JSON="$REPO_ROOT/plugin-doc/.claude-plugin/plugin.json"
 if [[ -f "$DOC_JSON" ]]; then
-  # Did plugin-doc/ files change?
+  # Did plugin-doc/ files change (excluding plugin.json itself)?
   DOC_CHANGED=$(git diff --name-only "$RANGE" -- "plugin-doc/" | grep -v "plugin-doc/.claude-plugin/plugin.json" | head -1 || true)
-  # Was its version already bumped?
-  DOC_BUMPED=$(git diff --name-only "$RANGE" -- "plugin-doc/.claude-plugin/plugin.json" | head -1 || true)
 
-  if [[ -n "$DOC_CHANGED" && -z "$DOC_BUMPED" ]]; then
-    # Bump pew-doc version inline (no pw.sh dependency)
-    python3 -c "
+  if [[ -n "$DOC_CHANGED" ]]; then
+    # Compare actual version strings
+    local_doc_ver=$(grep -o '"version": "[^"]*"' "$DOC_JSON" | head -1 | cut -d'"' -f4)
+    if [[ "$REMOTE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+      remote_doc_ver=""
+    else
+      remote_doc_ver=$(git show "$REMOTE_SHA:plugin-doc/.claude-plugin/plugin.json" 2>/dev/null | grep -o '"version": "[^"]*"' | head -1 | cut -d'"' -f4 || echo "")
+    fi
+
+    if [[ "$local_doc_ver" == "$remote_doc_ver" ]]; then
+      # Version unchanged — bump pew-doc version inline (no pw.sh dependency)
+      python3 -c "
 import json, sys
 pj_path = sys.argv[1]
 mp_path = sys.argv[2]
@@ -85,8 +102,9 @@ open(mp_path, 'w').write(json.dumps(mp, indent=2) + '\n')
 
 print(json.dumps({'plugin': 'pew-doc', 'new': new_ver}))
 " "$DOC_JSON" "$MARKETPLACE" 1 >/dev/null 2>&1
-    git -C "$REPO_ROOT" add "$DOC_JSON" "$MARKETPLACE"
-    NEEDS_BUMP=true
+      git -C "$REPO_ROOT" add "$DOC_JSON" "$MARKETPLACE"
+      NEEDS_BUMP=true
+    fi
   fi
 fi
 
