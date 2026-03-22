@@ -1,0 +1,16 @@
+{
+  "name": "pew-groom",
+  "description": "Automated technical grooming — multi-phase issue analysis against actual code across multiple repositories. Bridges Product Owners and Tech Leads.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Boyd Stratton"
+  },
+  "license": "MIT",
+  "keywords": [
+    "grooming",
+    "issue-analysis",
+    "estimation",
+    "technical-planning",
+    "code-analysis"
+  ]
+}

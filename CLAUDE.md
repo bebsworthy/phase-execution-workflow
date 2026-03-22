@@ -2,7 +2,7 @@
 
 ## What this is
 
-A Claude Code plugin with 6 skills, 5 commands, 46 agents. See [README.md](README.md) for user-facing docs.
+A Claude Code plugin marketplace with 3 plugins. See [README.md](README.md) for user-facing docs.
 
 ## Dev workflow
 
@@ -14,21 +14,28 @@ A Claude Code plugin with 6 skills, 5 commands, 46 agents. See [README.md](READM
 ## Project structure
 
 ```
-plugin/              → The installable plugin (marketplace.json source points here)
-  skills/            → Skill definitions (pew-build, pew-init, pew-vibe, pew-ux-audit, pew-test-audit, pew-groom)
-  commands/          → Command orchestrators (pew-vibe, pew-ux-audit, pew-test-audit, pew-audit-to-phases, pew-groom)
-  agents/            → 45 sub-agent definitions (build-*, council-*, ux-audit-*, test-audit-*, groom-*)
+plugin/              → pew: delivery workflow plugin
+  skills/            → Skill definitions (pew-build, pew-init, pew-vibe, pew-ux-audit, pew-test-audit)
+  commands/          → Command orchestrators (pew-vibe, pew-ux-audit, pew-test-audit, pew-audit-to-phases)
+  agents/            → Sub-agent definitions (build-*, council-*, ux-audit-*, test-audit-*)
   scripts/lib/       → pw.py (phase tracker CLI) + test_pw.py + .venv/
   scripts/           → pw.sh (venv wrapper), inject-config.sh (SubagentStart hook), pre-push-bump
   templates/         → Reference templates for phase artifacts (IDEAS, BRD, SPEC, etc.)
   review-profiles/   → Composable tech best-practice profiles (TypeScript, React, NestJS, etc.)
   .claude-plugin/    → plugin.json (plugin manifest)
-.claude-plugin/      → marketplace.json (source: "./plugin")
+plugin-doc/          → pew-doc: documentation generation plugin
+plugin-groom/        → pew-groom: technical grooming plugin
+  skills/            → Skill definition (pew-groom)
+  commands/          → Command orchestrator (pew-groom)
+  agents/            → Sub-agent definitions (groom-*)
+  templates/         → groom.yaml.example
+  .claude-plugin/    → plugin.json (plugin manifest)
+.claude-plugin/      → marketplace.json (sources: ./plugin, ./plugin-doc, ./plugin-groom)
 ```
 
 ## Key conventions
 
-- **Agent naming**: `build-*` (step writers, devs, research), `council-*` (reviewers), `test-audit-*`, `ux-audit-*`, `groom-*` (technical grooming)
+- **Agent naming**: `build-*` (step writers, devs, research), `council-*` (reviewers), `test-audit-*`, `ux-audit-*`. `groom-*` agents are in plugin-groom.
 - **All agents**: Must have completion signal `[agent-name] COMPLETE ✓`, must say "do NOT commit" if they have Write/Edit tools
 - **Config injection**: SubagentStart hook (`inject-config.sh`) auto-injects `pew.yaml` config into agents. Don't pass config manually in spawn prompts.
 - **Sub-agents can't spawn sub-agents** (Claude Code hard limit). All agent spawning from orchestrator only.

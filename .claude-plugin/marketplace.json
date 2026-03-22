@@ -35,6 +35,20 @@
         "reverse-engineering"
       ],
       "category": "documentation"
+    },
+    {
+      "name": "pew-groom",
+      "source": "./plugin-groom",
+      "description": "Automated technical grooming \u2014 multi-phase issue analysis against actual code across multiple repositories",
+      "version": "1.0.0",
+      "keywords": [
+        "grooming",
+        "issue-analysis",
+        "estimation",
+        "technical-planning",
+        "code-analysis"
+      ],
+      "category": "workflow"
     }
   ]
 }

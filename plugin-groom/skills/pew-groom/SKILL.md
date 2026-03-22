@@ -158,7 +158,7 @@ settings:
   max_repos: number    # Maximum repos to analyze (default: 10)
 ```
 
-A template is available at `plugin/templates/groom.yaml.example`.
+A template is available at `templates/groom.yaml.example`.
 
 ---
 
