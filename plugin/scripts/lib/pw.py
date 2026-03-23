@@ -51,6 +51,7 @@ DEFAULT_CONFIG: dict = {
         "research": "phases/research",
         "audit_test": "phases/audit/test",
         "audit_ux": "phases/audit/ux",
+        "audit_react": "phases/audit/react",
         "guidelines": "",
     },
     "commands": {"verify": "", "e2e": ""},

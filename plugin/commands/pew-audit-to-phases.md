@@ -13,13 +13,14 @@ You convert audit report findings into PEW phases. This command works standalone
 Check for existing audit reports:
 
 1. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh validate-config` — if no pew.yaml, tell the user to run `/pew-init` first.
-2. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config` to get `config.paths.audit_test` and `config.paths.audit_ux`.
+2. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config` to get `config.paths.audit_test`, `config.paths.audit_ux`, and `config.paths.audit_react`.
 3. Check which reports exist:
    - `{config.paths.audit_test}/08-synthesis.md` → test audit available
    - `{config.paths.audit_ux}/05-proposals.md` → UX audit available
-4. If both exist, ask the user which audit to convert (or both).
-5. If neither exists, tell the user to run `/pew-test-audit` or `/pew-ux-audit` first.
-6. If `$ARGUMENTS` specifies an audit type (`test` or `ux`), use that directly.
+   - `{config.paths.audit_react}/07-synthesis.md` → react audit available
+4. If multiple exist, ask the user which audit to convert (or all).
+5. If none exists, tell the user to run `/pew-test-audit`, `/pew-ux-audit`, or `/pew-react-audit` first.
+6. If `$ARGUMENTS` specifies an audit type (`test`, `ux`, or `react`), use that directly.
 
 ## Step 2 — Read the Remediation Roadmap
 
@@ -74,6 +75,16 @@ Group by improvement level and impact:
 | Strategic (L3-L4, high severity) | "Improve Core User Flows" — pattern introductions and flow redesigns | medium | 05-proposals.md, 04-audit.md, 01-user-goals.md |
 | Structural (L5, any severity) | "UX Architecture Overhaul" — IA, navigation, mental model changes | large | 05-proposals.md, 04-audit.md, 01-user-goals.md, 03-patterns.md |
 
+### Code audit → phases mapping:
+
+| Tier | Suggested Phase | Size | Refs |
+|------|----------------|------|------|
+| Tier 1 (Immediate) | "Fix Critical Code Issues" -- security fixes, dead code removal, critical anti-patterns | medium | 07-synthesis.md, 03-security.md, 05-complexity.md |
+| Tier 2 (Short Term) | "Consolidate & Clean Up" -- duplication consolidation, pattern fixes, missing error handling | medium | 07-synthesis.md, 02-patterns.md, 04-duplication.md |
+| Tier 3 (Medium Term) | "Modernize & Simplify" -- architecture improvements, migrations, complexity reduction | medium | 07-synthesis.md, 06-debt.md, 08-roadmap.md |
+
+Tier 4 (Ongoing) is NOT a phase -- it's conventions/CI config. Mention it as a recommendation but don't create a phase.
+
 Skip phases with no findings. Combine small tiers if they have fewer than 3 items total.
 
 ## Step 5 — Present to User
@@ -120,7 +131,8 @@ Run `/pew-build` and say `start phase N` to begin.
 
 - NEVER insert phases before an in-progress phase.
 - Audit fix phases depend on each other (Tier 1 → Tier 2 → Tier 3) but NOT on unrelated project phases.
-- Skip tiers with no findings — don't create empty phases.
+- Skip tiers with no findings -- don't create empty phases.
 - Tier 4 / L5+ ongoing items become conventions or CI config recommendations, not phases.
+- For code audits, use tags `code-quality` on the generated phases.
 - If pew.yaml doesn't exist, tell the user to run `/pew-init` first — don't create phases without a configured project.
 - Refs must point to the detailed audit files, not just the report.
