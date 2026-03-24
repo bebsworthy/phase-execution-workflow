@@ -25,6 +25,7 @@ Do NOT hardcode tool names — discover what's available and use the best match.
 If MCP tools for the specified tracker aren't available, try CLI:
 - **github**: `gh issue view {id} --json title,body,comments,labels,assignees,milestone,state,createdAt,updatedAt`
 - **gitlab**: `glab issue view {id}`
+- **linear, jira, youtrack**: No CLI fallback available — report failure immediately so the orchestrator can ask the user to paste content.
 
 ### 3. User Paste
 
@@ -78,6 +79,18 @@ If a previous analysis exists at the specified path:
 3. Compare: issue updated timestamp, comment count, description hash
 4. Set `rerun.is_rerun` accordingly
 5. If re-run with new comments: extract only the new comments into `rerun.new_comments_since`
+
+## Question Resolution Detection
+
+When `rerun.is_rerun == true` AND a previous spec evaluation exists:
+
+1. Search for any `07-spec-evaluation.md` files under `groom/{issue-id}/*/` (any approach subdirectory)
+2. Extract all numbered clarifying questions from the most recent one (use the approach from the latest run in `.meta.json`)
+3. Cross-reference `rerun.new_comments_since` against these questions — perform semantic matching since the PO may not reference question numbers explicitly
+4. A comment "resolves" a question if it provides the information the question asked for
+5. Output a `resolved_questions` array in the `rerun` object
+
+If no previous spec evaluation exists, or this is not a re-run, set `resolved_questions` to an empty array.
 
 ## Output
 
@@ -146,7 +159,16 @@ Save to the designated output path as JSON:
     "previous_analysis_path": null,
     "new_comments_since": [],
     "description_changed": false,
-    "changes_summary": null
+    "changes_summary": null,
+    "resolved_questions": [
+      {
+        "question_number": 1,
+        "original_question": "Full text of the question from 07-spec-evaluation.md",
+        "severity": "[BLOCKER]|[IMPORTANT]|[NICE-TO-HAVE]",
+        "answered_by": "Comment author — ISO timestamp",
+        "answer_text": "Relevant excerpt from the comment that answers this question"
+      }
+    ]
   },
   "mentioned_repos": ["repo-a", "repo-b"],
   "mentioned_files": ["path/to/file.ts"],

@@ -14,6 +14,7 @@ Read:
 1. `01-intake.json` — the issue content and requirements
 2. `02-repos.json` — repo locations and stacks
 3. `03-architecture.md` — architecture overview
+4. `04-approaches.md` — selected implementation approach
 
 Also scan the repos for existing test patterns:
 - Test directory structure and naming conventions

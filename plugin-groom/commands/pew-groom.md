@@ -6,7 +6,7 @@ allowed-tools: Agent, Read, Write, Bash, Glob, Grep, AskUserQuestion
 
 # Technical Grooming — Orchestrator
 
-You are the **Orchestrator Agent**. Your job is NOT to analyze the issue yourself — it is to **spawn, coordinate, and synthesize** a team of 12 specialized sub-agents across 6 phases. Each phase's output feeds the next.
+You are the **Orchestrator Agent**. Your job is NOT to analyze the issue yourself — it is to **spawn, coordinate, and synthesize** up to 12 specialized sub-agents across 6 phases. Each phase's output feeds the next.
 
 This skill operates in a standalone workspace directory (not necessarily a git repo). It analyzes issues from any tracker against actual code across multiple repositories.
 
@@ -61,7 +61,7 @@ After reading or creating `groom.yaml`, check if `tracker.type` is set.
 }
 ```
 
-Save the resolved tracker type back to `groom.yaml` under `tracker.type` so future runs skip this step.
+The user can select "Other" for trackers not listed (e.g., YouTrack). Save the resolved tracker type back to `groom.yaml` under `tracker.type` so future runs skip this step.
 
 ### 0b. Create Directory Structure
 
@@ -232,6 +232,16 @@ Create directory: `{cwd}/groom/{issue-id}/{approach-slug}/`
 
 Record the selected approach name and slug. Pass both to all Phase 3+ agents.
 
+### Fast-Path Check
+
+Read `04-approaches.md` and check the "Complexity Pre-Assessment" line.
+
+**If complexity is XS or S AND only one approach was identified** (single-approach output format, no comparison matrix):
+- Set `fast_path = true` and `output_mode = compact`
+- Output: `[FAST PATH] XS/S complexity with single approach — skipping council review, using compact output`
+
+**Otherwise**: Set `fast_path = false` and `output_mode = full`. Proceed normally through all phases.
+
 ## Step 3 — Phase 3: Deep Analysis (4 Agents Parallel)
 
 Output: `Phase 3/6 — Deep analysis (code impact, blockers, spec evaluation, test planning)...`
@@ -263,6 +273,10 @@ Output: `Phase 4/6 — Estimating effort...`
 
 ## Step 5 — Phase 5: Council Review (2 Agents Parallel)
 
+**If `fast_path == true`**: Skip this phase entirely. Output: `Phase 5/6 — Skipped (XS/S complexity, single approach)`. Proceed to Step 6.
+
+**Otherwise**:
+
 Output: `Phase 5/6 — Council review (completeness + feasibility)...`
 
 Spawn both council agents **in a single message**:
@@ -280,15 +294,16 @@ Spawn both council agents **in a single message**:
 Output: `Phase 6/6 — Synthesizing final analysis document...`
 
 ### Spawn `groom-synthesizer`
-> Synthesize all grooming analysis into a single editable analysis document. Read shared files (01-04) from `{cwd}/groom/{issue-id}/` and approach-specific files (05-11) from `{cwd}/groom/{issue-id}/{approach-slug}/`. Incorporate council review feedback. If this is a re-run, highlight what changed since the previous analysis. Save to `{cwd}/groom/{issue-id}/{approach-slug}/analysis.md`.
+> Synthesize all grooming analysis into a single editable analysis document. Read shared files (01-04) from `{cwd}/groom/{issue-id}/` and approach-specific files (05-11) from `{cwd}/groom/{issue-id}/{approach-slug}/`. Incorporate council review feedback. If council review files (10-review-completeness.md, 11-review-feasibility.md) do not exist, this is a fast-path run — skip council integration and note "Council review: skipped (fast-path)" in the output. If this is a re-run, highlight what changed since the previous analysis. The output mode for this synthesis is "{output_mode}" (compact or full). If compact, use the compact template from the pew-groom skill. Save to `{cwd}/groom/{issue-id}/{approach-slug}/analysis.md`.
 
-**Wait for completion.** Validate `{approach-slug}/analysis.md` exists and contains all required sections (Executive Summary, Specification Assessment, Technical Plan, Blockers, Estimation, Test Plan, Definition of Done).
+**Wait for completion.** If `output_mode` is full: validate `{approach-slug}/analysis.md` contains all required sections (Executive Summary, Specification Assessment, Technical Plan, Blockers, Estimation, Test Plan, Definition of Done). If `output_mode` is compact: validate it contains Executive Summary, Effort Estimate, and Definition of Done.
 
 ## Step 7 — Present and Offer to Post
 
 ### 7a. Update Run Metadata
 
-Write `.meta.json` to track this run:
+Write `.meta.json` to track this run. The `posted_as_comment` field tracks posting status: `false` (not posted), `true` (full analysis posted), or `"summary"` (summary-only posted).
+
 ```json
 {
   "issue_id": "{issue-id}",
@@ -329,9 +344,9 @@ groom/{issue-id}/
     ├── 07-spec-evaluation.md               ✓
     ├── 08-test-plan.md                     ✓
     ├── 09-estimation.md                    ✓
-    ├── 10-review-completeness.md           ✓
-    ├── 11-review-feasibility.md            ✓
-    └── analysis.md                         ✓  ← final output
+    ├── 10-review-completeness.md           ✓  (or "— skipped (fast-path)" if fast_path)
+    ├── 11-review-feasibility.md            ✓  (or "— skipped (fast-path)" if fast_path)
+    └── analysis.md                         ✓  ← final output (compact if fast_path)
 ```
 
 If other approach subdirectories exist, also list them:
@@ -348,9 +363,9 @@ Ask the user via `AskUserQuestion`:
   "question": "Analysis complete for approach: {approach name}. What would you like to do?",
   "header": "Next",
   "options": [
-    {"label": "Post as comment", "description": "Post analysis.md as a comment on the issue"},
+    {"label": "Post as comment", "description": "Post full analysis.md as a comment on the issue"},
+    {"label": "Post summary", "description": "Post executive summary + questions + estimate, with link to full analysis"},
     {"label": "Analyze another approach", "description": "Run deep analysis on a different implementation approach"},
-    {"label": "Edit first", "description": "I'll edit analysis.md, then tell you to post it"},
     {"label": "Done", "description": "Just save the files, don't post"}
   ]
 }
@@ -358,11 +373,31 @@ Ask the user via `AskUserQuestion`:
 
 **If "Post as comment"**: Use the resolved `tracker.type` from `groom.yaml` to post `{approach-slug}/analysis.md` content as a comment on the issue. Discover available MCP tools matching the tracker type (look for tool names containing the tracker keyword + `comment`, `create_comment`, `add_comment`, `note`). If no MCP tools found, fall back to CLI (`gh issue comment`, `glab issue note`). Update `.meta.json` with `posted_as_comment: true` for this approach.
 
+**If "Post summary"**: Read `{approach-slug}/analysis.md`. Extract three sections:
+1. The **Executive Summary** section (everything between `## Executive Summary` and the next `##`)
+2. The **Clarifying Questions** subsection (including severity tags and resolution status if present). Use "Clarifying Questions (Open)" if it exists, otherwise "Clarifying Questions".
+3. The **Effort Estimate** line from the header (`**Estimate**: {likely} days`) and the Confidence/Range line from the Effort Estimation section
+
+Compose a comment in this format:
+```markdown
+## Technical Grooming Summary
+
+{Executive Summary content}
+
+### Clarifying Questions
+{Clarifying Questions content — or "None" if no open questions}
+
+**Estimate**: {likely} days ({optimistic}-{pessimistic}) | Confidence: {level}
+
+---
+*Full analysis saved locally at: groom/{issue-id}/{approach-slug}/analysis.md*
+```
+
+Post using the same tracker integration as "Post as comment" (MCP tools or CLI fallback). Update `.meta.json` with `posted_as_comment: "summary"` for this approach (string value to distinguish from full post).
+
 **If "Analyze another approach"**: Loop back to **Step 2b** (approach selection gate). Shared files (01-04) are reused — skip Phases 1-2. The approach selection will show which approaches have been analyzed.
 
-**If "Edit first"**: Tell the user the file path (`groom/{issue-id}/{approach-slug}/analysis.md`) and wait for them to say "post it".
-
-**If "Done"**: End the workflow.
+**If "Done"**: End the workflow. The user can edit `groom/{issue-id}/{approach-slug}/analysis.md` and re-invoke to post later.
 
 ## Operating Rules
 
@@ -370,6 +405,6 @@ Ask the user via `AskUserQuestion`:
 - **File paths, not content**: Pass file paths to agents, never embed file content in spawn prompts.
 - **No commits**: This skill does not commit anything. All output is in the `groom/` directory.
 - **Workspace isolation**: This skill operates in a standalone directory, not inside a repo.
-- **Sequential dependencies**: Phase 3 depends on Phase 2. Phase 4 depends on Phase 3. Phase 5 depends on Phase 4. Phase 6 depends on Phase 5.
+- **Sequential dependencies**: Phase 3 depends on Phase 2. Phase 4 depends on Phase 3. Phase 5 depends on Phase 4 (skipped on fast-path). Phase 6 depends on Phase 5, or Phase 4 if fast-path.
 - **Parallel where possible**: Phase 3 (4 agents) and Phase 5 (2 agents) run in parallel.
 - **Error recovery**: If an agent fails to produce its expected output file, inform the user which agent and phase failed. Offer to retry the failed phase via `AskUserQuestion` with options: "Retry this phase", "Skip and continue" (only if downstream agents can work without it), or "Stop here" (save partial results).

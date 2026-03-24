@@ -14,12 +14,13 @@ Read:
 1. `01-intake.json` — the issue content, comments, and metadata
 2. `02-repos.json` — repo manifest (repo count, stacks, relevance)
 3. `03-architecture.md` — architecture overview (to understand what's technically feasible)
+4. `04-approaches.md` — selected implementation approach and complexity pre-assessment
 
 ## Analysis Process
 
 ### 1. Complexity Assessment
 
-Before evaluating the spec, determine the issue's complexity level (XS through XL from the pew-groom skill framework). This determines how much specification detail is expected:
+Read the complexity pre-assessment from `04-approaches.md` — this is the authoritative baseline. Use it to calibrate how much specification detail is expected. If your analysis suggests a different complexity level, note the disagreement and your reasoning, but do not silently override. Complexity levels (XS through XL from the pew-groom skill framework):
 - **XS/S** (trivial/small): A clear description is sufficient. Don't demand formal acceptance criteria for a typo fix.
 - **M** (medium): Should have clear scope, basic acceptance criteria, and main edge cases covered.
 - **L/XL** (large/epic): Should have detailed requirements, acceptance criteria, edge cases, and clear boundaries.
@@ -60,11 +61,41 @@ Common gap categories:
 ### 4. Clarifying Questions
 
 Generate prioritized questions for the PO. Rules:
-- Order by impact: most blocking questions first
+- Tag each question with a severity from the Question Severity table in the pew-groom skill: `[BLOCKER]`, `[IMPORTANT]`, or `[NICE-TO-HAVE]`
+- Order blockers first, then important, then nice-to-have
 - Be specific: "Should users see a confirmation dialog before deleting?" not "What about the UX?"
 - Provide options when possible: "Should this be (a) immediate delete, (b) soft delete with undo, or (c) confirmation dialog?"
-- Group related questions
+- Group related questions within the same severity level
 - Don't ask questions that can be answered by reading the code (that's your job)
+
+Example format:
+```
+> 1. [BLOCKER] Should this feature apply to all user roles or only admins?
+> 2. [IMPORTANT] Should we support bulk operations, or single-item only for v1?
+> 3. [NICE-TO-HAVE] Any preference on the confirmation dialog copy?
+```
+
+### 4b. Question Resolution (Re-runs Only)
+
+If `01-intake.json` contains `rerun.resolved_questions` with entries:
+
+1. For each resolved question: mark it as **RESOLVED** in your output. Include what the PO said and how it affects the analysis.
+2. For unresolved questions from the previous run: re-assess whether they still apply given any new context. Keep them if still relevant, drop them if the new information makes them moot. Mark as **STILL OPEN**.
+3. New questions (not in the previous run) get normal severity tags only — no extra marker.
+
+Output format for resolved questions:
+```
+> 1. [BLOCKER] [RESOLVED] Original question text?
+>    **Answer** (from {author}, {date}): PO response excerpt
+>    **Impact**: How this answer affects the analysis
+```
+
+Unresolved questions from previous runs:
+```
+> 2. [IMPORTANT] [STILL OPEN] Original question text?
+```
+
+If this is not a re-run or `resolved_questions` is empty, skip this step entirely.
 
 ### 5. Assumptions Log
 

@@ -20,7 +20,7 @@ Read shared files (01-04) from the issue directory and approach-specific files (
 
 ### 1. Complexity Classification
 
-Using the Complexity Scale from the pew-groom skill framework, classify the issue as XS through XL based on:
+Read the complexity pre-assessment from `04-approaches.md` — this is the authoritative baseline set by the approach analyst. Using the Complexity Scale from the pew-groom skill framework, validate or refine the classification as XS through XL based on:
 - Number of repos impacted
 - Number of files to change
 - Whether database migrations are needed
@@ -82,7 +82,7 @@ If the likely estimate exceeds 10 working days (2 weeks):
 
 Write a markdown report to the designated output path:
 
-1. **Complexity Classification**: level with justification
+1. **Complexity Classification**: level with justification. If this differs from the approach analyst's pre-assessment in `04-approaches.md`, explicitly note the disagreement and your reasoning.
 2. **Raw Estimate Breakdown**: table by work area
 3. **Human-Velocity Estimate**: component table with multipliers applied
 4. **Confidence Level**: with explanation
