@@ -49,6 +49,20 @@
         "code-analysis"
       ],
       "category": "workflow"
+    },
+    {
+      "name": "pew-prompt-audit",
+      "source": "./plugin-prompt",
+      "description": "Prompt quality audit \u2014 multi-phase analysis of prompt, agent, and skill definitions for defects, conflicts, and optimization opportunities",
+      "version": "1.0.0",
+      "keywords": [
+        "prompt-engineering",
+        "prompt-optimization",
+        "audit",
+        "agent-quality",
+        "context-engineering"
+      ],
+      "category": "quality"
     }
   ]
 }

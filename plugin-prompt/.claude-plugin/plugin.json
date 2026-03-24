@@ -1,0 +1,16 @@
+{
+  "name": "pew-prompt-audit",
+  "description": "Prompt quality audit — multi-phase analysis of prompt, agent, and skill definitions for defects, conflicts, and optimization opportunities.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Boyd Stratton"
+  },
+  "license": "MIT",
+  "keywords": [
+    "prompt-engineering",
+    "prompt-optimization",
+    "audit",
+    "agent-quality",
+    "context-engineering"
+  ]
+}
