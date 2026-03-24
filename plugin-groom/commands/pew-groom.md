@@ -74,9 +74,30 @@ repos/
 
 Where `{issue-id}` is derived from the argument (sanitized: `PROJ-123`, `456`, etc.).
 
-### 0c. Detect Re-run
+### 0c. Detect Re-run & Fast Approach Switch
 
-Check if `groom/{issue-id}/.meta.json` exists. If yes, this is a potential re-run — the intake agent will determine what changed.
+Check if `groom/{issue-id}/.meta.json` exists. If yes, read it and check whether shared files (01-04) also exist.
+
+**If `.meta.json` exists AND shared files 01-04 exist**: this is a returning user. Present via `AskUserQuestion`:
+```json
+{
+  "question": "Previous analysis found for this issue.\n\nAnalyzed approaches:\n{list approaches from .meta.json with dates, each marked ✓}\n\nAvailable approaches from 04-approaches.md:\n{list all approaches — mark analyzed ones with ✓, unanalyzed ones without}\n\nWhat would you like to do?",
+  "header": "Re-run",
+  "options": [
+    {"label": "Analyze another approach", "description": "Skip to approach selection (reuses existing intake, repos, architecture)"},
+    {"label": "Full re-run", "description": "Re-read the issue from tracker and run full analysis from scratch"},
+    {"label": "View results", "description": "Open existing analysis.md"}
+  ]
+}
+```
+
+- **"Analyze another approach"**: Jump directly to **Step 2b** (approach selection gate). Skip Steps 1-2 entirely — reuse existing shared files 01-04.
+- **"Full re-run"**: Continue with Step 1 as normal (spawns intake, full pipeline).
+- **"View results"**: Point user to existing `{approach-slug}/analysis.md` and end.
+
+**If `.meta.json` exists but shared files are missing**: continue with Step 1 (previous run may have been incomplete).
+
+**If `.meta.json` does not exist**: continue with Step 1 (first run).
 
 ## Step 1 — Phase 1: Issue Intake (Sequential)
 
@@ -113,24 +134,9 @@ Read `01-intake.json` and check if `unfetchable_urls` is non-empty. If so, prese
 
 ### Re-run Gate
 
-Read `01-intake.json` and check `rerun` field. Also check `.meta.json` for previously analyzed approaches.
+Read `01-intake.json` and check `rerun` field. This gate only runs when the user chose "Full re-run" in Step 0c (or on first run).
 
-- **`is_rerun == true` and no changes** (no new comments, description unchanged):
-  - If previous approaches exist (check `.meta.json`): present via `AskUserQuestion`:
-    ```json
-    {
-      "question": "No issue changes since last analysis. Previously analyzed approaches:\n\n{list of approach slugs with dates}\n\nWhat would you like to do?",
-      "header": "Re-run",
-      "options": [
-        {"label": "Analyze another approach", "description": "Pick a different approach to analyze in depth"},
-        {"label": "Re-analyze current", "description": "Force re-run on the same approach"},
-        {"label": "View results", "description": "Open existing analysis.md"}
-      ]
-    }
-    ```
-  - If "Analyze another approach": skip to Step 2b (reuse shared files 01-04).
-  - If "Re-analyze current": continue with full Phase 3-6 re-analysis on the same approach.
-  - If "View results": point user to existing `analysis.md` and end.
+- **`is_rerun == true` and no changes** (no new comments, description unchanged): inform the user nothing changed since the last analysis. End the workflow — approach switching is handled in Step 0c.
 - **`is_rerun == true` with new comments**: continue with focused re-analysis. Note the re-run status for downstream agents.
 - **`is_rerun == false`**: continue with full analysis.
 
