@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
-# Git pre-push hook: auto-bump patch version in plugin.json + marketplace.json.
+# Git pre-push hook: auto-bump patch version across ALL plugins in sync.
 #
 # Install:  ln -sf ../../plugin/scripts/pre-push-bump .git/hooks/pre-push
 #
-# Handles both plugins in this repo:
-#   - plugin/     (PEW — marketplace.json plugins[0])
-#   - plugin-doc/ (pew-doc — marketplace.json plugins[1])
-#
-# For each plugin: if its files changed but its version wasn't bumped,
-# bump the patch version, commit, and abort the push so you can re-push.
+# Reads marketplace.json to discover plugins. If any plugin's files changed
+# without a version bump, bumps the patch version for ALL plugins to the same
+# new version, commits, and aborts the push so you can re-push.
 
 set -euo pipefail
 
@@ -38,80 +35,94 @@ if [[ -z "$RANGE" ]]; then
   exit 0
 fi
 
-NEEDS_BUMP=false
-
-# --- Check plugin/ (PEW) ---
-PEW_JSON="$REPO_ROOT/plugin/.claude-plugin/plugin.json"
-if [[ -f "$PEW_JSON" ]]; then
-  # Did plugin/ files change (excluding plugin.json itself)?
-  PEW_CHANGED=$(git diff --name-only "$RANGE" -- "plugin/" | grep -v "plugin/.claude-plugin/plugin.json" | head -1 || true)
-
-  if [[ -n "$PEW_CHANGED" ]]; then
-    # Compare actual version strings instead of just checking if file changed
-    local_ver=$(grep -o '"version": "[^"]*"' "$PEW_JSON" | head -1 | cut -d'"' -f4)
-    if [[ "$REMOTE_SHA" == "0000000000000000000000000000000000000000" ]]; then
-      remote_ver=""
-    else
-      remote_ver=$(git show "$REMOTE_SHA:plugin/.claude-plugin/plugin.json" 2>/dev/null | grep -o '"version": "[^"]*"' | head -1 | cut -d'"' -f4 || echo "")
-    fi
-
-    if [[ "$local_ver" == "$remote_ver" ]]; then
-      # Version unchanged — bump needed
-      "$REPO_ROOT/plugin/scripts/pw.sh" bump-version --bump patch >/dev/null 2>&1
-      git -C "$REPO_ROOT" add "$PEW_JSON" "$MARKETPLACE"
-      NEEDS_BUMP=true
-    fi
-  fi
-fi
-
-# --- Check plugin-doc/ (pew-doc) ---
-DOC_JSON="$REPO_ROOT/plugin-doc/.claude-plugin/plugin.json"
-if [[ -f "$DOC_JSON" ]]; then
-  # Did plugin-doc/ files change (excluding plugin.json itself)?
-  DOC_CHANGED=$(git diff --name-only "$RANGE" -- "plugin-doc/" | grep -v "plugin-doc/.claude-plugin/plugin.json" | head -1 || true)
-
-  if [[ -n "$DOC_CHANGED" ]]; then
-    # Compare actual version strings
-    local_doc_ver=$(grep -o '"version": "[^"]*"' "$DOC_JSON" | head -1 | cut -d'"' -f4)
-    if [[ "$REMOTE_SHA" == "0000000000000000000000000000000000000000" ]]; then
-      remote_doc_ver=""
-    else
-      remote_doc_ver=$(git show "$REMOTE_SHA:plugin-doc/.claude-plugin/plugin.json" 2>/dev/null | grep -o '"version": "[^"]*"' | head -1 | cut -d'"' -f4 || echo "")
-    fi
-
-    if [[ "$local_doc_ver" == "$remote_doc_ver" ]]; then
-      # Version unchanged — bump pew-doc version inline (no pw.sh dependency)
-      python3 -c "
+# Build plugin list from marketplace.json: "source_dir" per line (stripped of ./)
+PLUGIN_DIRS=$(python3 -c "
 import json, sys
-pj_path = sys.argv[1]
-mp_path = sys.argv[2]
-plugin_index = int(sys.argv[3])
+mp = json.loads(open(sys.argv[1]).read())
+for p in mp.get('plugins', []):
+    print(p.get('source', '').lstrip('./'))
+" "$MARKETPLACE")
 
-# Bump plugin.json
-pj = json.loads(open(pj_path).read())
-parts = [int(x) for x in pj['version'].split('.')]
-parts[2] += 1
-new_ver = '.'.join(str(x) for x in parts)
-pj['version'] = new_ver
-open(pj_path, 'w').write(json.dumps(pj, indent=2) + '\n')
+# Check if any plugin needs a bump
+ANY_NEEDS_BUMP=false
+while IFS= read -r plugin_dir; do
+  PLUGIN_JSON="$REPO_ROOT/$plugin_dir/.claude-plugin/plugin.json"
+  [[ -f "$PLUGIN_JSON" ]] || continue
 
-# Bump marketplace.json entry
-mp = json.loads(open(mp_path).read())
-mp['plugins'][plugin_index]['version'] = new_ver
-open(mp_path, 'w').write(json.dumps(mp, indent=2) + '\n')
+  CHANGED=$(git diff --name-only "$RANGE" -- "$plugin_dir/" \
+    | grep -v "$plugin_dir/.claude-plugin/plugin.json" \
+    | head -1 || true)
+  [[ -n "$CHANGED" ]] || continue
 
-print(json.dumps({'plugin': 'pew-doc', 'new': new_ver}))
-" "$DOC_JSON" "$MARKETPLACE" 1 >/dev/null 2>&1
-      git -C "$REPO_ROOT" add "$DOC_JSON" "$MARKETPLACE"
-      NEEDS_BUMP=true
-    fi
+  local_ver=$(python3 -c "import json,sys; print(json.loads(open(sys.argv[1]).read())['version'])" "$PLUGIN_JSON")
+  if [[ "$REMOTE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+    remote_ver=""
+  else
+    remote_ver=$(git show "$REMOTE_SHA:$plugin_dir/.claude-plugin/plugin.json" 2>/dev/null \
+      | python3 -c "import json,sys; print(json.loads(sys.stdin.read())['version'])" 2>/dev/null || echo "")
   fi
+
+  if [[ "$local_ver" == "$remote_ver" ]]; then
+    ANY_NEEDS_BUMP=true
+    break
+  fi
+done <<< "$PLUGIN_DIRS"
+
+if [[ "$ANY_NEEDS_BUMP" != "true" ]]; then
+  exit 0
 fi
 
-if [[ "$NEEDS_BUMP" == "true" ]]; then
-  git -C "$REPO_ROOT" commit -m "chore: bump version (auto)"
-  echo ""
-  echo ">>> Version auto-bumped. Please push again to include the bump."
-  echo ""
-  exit 1
-fi
+# Bump all plugins to the same new version
+python3 -c "
+import json, sys
+
+mp_path = sys.argv[1]
+repo_root = sys.argv[2]
+
+mp = json.loads(open(mp_path).read())
+
+# Find the highest version across all plugin.json files
+max_parts = [0, 0, 0]
+for p in mp.get('plugins', []):
+    src = p.get('source', '').lstrip('./')
+    pj_path = f'{repo_root}/{src}/.claude-plugin/plugin.json'
+    try:
+        pj = json.loads(open(pj_path).read())
+        parts = [int(x) for x in pj['version'].split('.')]
+        if parts > max_parts:
+            max_parts = parts
+    except (FileNotFoundError, KeyError, ValueError):
+        continue
+
+# Bump patch
+max_parts[2] += 1
+new_ver = '.'.join(str(x) for x in max_parts)
+
+# Update every plugin.json and marketplace entry
+for p in mp.get('plugins', []):
+    src = p.get('source', '').lstrip('./')
+    pj_path = f'{repo_root}/{src}/.claude-plugin/plugin.json'
+    try:
+        pj = json.loads(open(pj_path).read())
+        pj['version'] = new_ver
+        open(pj_path, 'w').write(json.dumps(pj, indent=2) + '\n')
+    except FileNotFoundError:
+        continue
+    p['version'] = new_ver
+
+open(mp_path, 'w').write(json.dumps(mp, indent=2) + '\n')
+print(f'Bumped all plugins to {new_ver}')
+" "$MARKETPLACE" "$REPO_ROOT"
+
+# Stage all modified files
+git -C "$REPO_ROOT" add "$MARKETPLACE"
+while IFS= read -r plugin_dir; do
+  PLUGIN_JSON="$REPO_ROOT/$plugin_dir/.claude-plugin/plugin.json"
+  [[ -f "$PLUGIN_JSON" ]] && git -C "$REPO_ROOT" add "$PLUGIN_JSON"
+done <<< "$PLUGIN_DIRS"
+
+git -C "$REPO_ROOT" commit -m "chore: bump version (auto)"
+echo ""
+echo ">>> Version auto-bumped. Please push again to include the bump."
+echo ""
+exit 1

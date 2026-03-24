@@ -1,7 +1,7 @@
 {
   "name": "pew-doc",
   "description": "Generate comprehensive application documentation from codebase analysis — product overview, architecture, internals, API contracts, and data models.",
-  "version": "1.0.1",
+  "version": "4.0.9",
   "author": {
     "name": "Boyd Stratton"
   },

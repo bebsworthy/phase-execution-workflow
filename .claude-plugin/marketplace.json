@@ -25,7 +25,7 @@
       "name": "pew-doc",
       "source": "./plugin-doc",
       "description": "Generate comprehensive application documentation from codebase analysis \u2014 product overview, architecture, internals, API contracts, and data models",
-      "version": "1.0.0",
+      "version": "4.0.9",
       "keywords": [
         "documentation",
         "architecture",
@@ -40,7 +40,7 @@
       "name": "pew-groom",
       "source": "./plugin-groom",
       "description": "Automated technical grooming \u2014 multi-phase issue analysis against actual code across multiple repositories",
-      "version": "1.0.0",
+      "version": "4.0.9",
       "keywords": [
         "grooming",
         "issue-analysis",
@@ -54,7 +54,7 @@
       "name": "pew-prompt-audit",
       "source": "./plugin-prompt",
       "description": "Prompt quality audit \u2014 multi-phase analysis of prompt, agent, and skill definitions for defects, conflicts, and optimization opportunities",
-      "version": "1.0.0",
+      "version": "4.0.9",
       "keywords": [
         "prompt-engineering",
         "prompt-optimization",

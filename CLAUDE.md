@@ -50,4 +50,4 @@ See [PATTERNS.md](PATTERNS.md) for orchestration patterns, hard constraints, and
 
 All in `plugin/scripts/lib/test_pw.py`. Run with `.venv/bin/python3 -m pytest test_pw.py` from that directory. The venv is auto-created by `pw.sh` on first run.
 
-When adding features to `pw.py`, add corresponding tests. Current: 128 tests.
+When adding features to `pw.py`, add corresponding tests. Current: 124 tests.

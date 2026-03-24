@@ -1,7 +1,7 @@
 {
   "name": "pew-prompt-audit",
   "description": "Prompt quality audit — multi-phase analysis of prompt, agent, and skill definitions for defects, conflicts, and optimization opportunities.",
-  "version": "1.0.0",
+  "version": "4.0.9",
   "author": {
     "name": "Boyd Stratton"
   },
