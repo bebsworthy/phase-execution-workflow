@@ -4,16 +4,24 @@
 # The orchestrator will create this interactively if it doesn't exist.
 
 # Repositories to analyze. Each repo will be cloned into repos/{name}/
+#
+# scope: controls how contract/interface changes are evaluated
+#   internal — owned and consumed solely by this team, safe to refactor freely (default)
+#   shared   — internal to the org but consumed by other teams, contract changes require coordination
+#   external — third-party or published package, contract is fixed
 repos:
   - name: backend
     url: git@github.com:your-org/backend.git
     branch: main
+    scope: internal
   - name: frontend
     url: git@github.com:your-org/frontend.git
     branch: main
+    scope: internal
   # - name: shared-lib
   #   url: git@github.com:your-org/shared-lib.git
   #   branch: main
+  #   scope: shared
 
 # Issue tracker type. Used to select the correct MCP/CLI integration for
 # reading issues and posting analysis comments. If omitted, the orchestrator

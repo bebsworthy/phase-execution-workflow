@@ -39,6 +39,23 @@ For repos identified as primary or secondary, scan for cross-repo dependencies:
 
 If an unconfigured repo is discovered as a dependency, add it to `additional_repos_suggested` with the reason and URL (if discoverable from package registry or git remote patterns).
 
+### 4b. Scope Classification
+
+Each repo must carry a `scope` classification that controls how contract changes are evaluated downstream:
+- `internal` — owned and consumed solely by this team, safe to refactor freely
+- `shared` — internal to the org but consumed by other teams, contract changes require coordination
+- `external` — third-party or published package, contract is fixed
+
+**For configured repos** (in `groom.yaml`): use the `scope` field if present, otherwise default to `internal`.
+
+**For discovered repos** (`additional_repos_suggested`): infer a `scope_hint` using these heuristics:
+- Published to a package registry (npm, PyPI, Maven Central) → likely `shared` or `external`
+- Referenced as a dependency by multiple configured repos → likely `shared`
+- Lives in a separate org or has its own release process → likely `shared`
+- Third-party / not owned by the org → `external`
+
+Include the reasoning in `scope_hint` so the orchestrator can present it to the user for confirmation.
+
 ### 5. Stack Detection
 
 For each relevant repo, detect the tech stack:
@@ -67,7 +84,8 @@ Save to the designated output path as JSON:
       "git_head": "abc1234",
       "relevance": "primary",
       "reason": "mentioned in issue description",
-      "stack": "React 19, TypeScript 5.7, Vite 6"
+      "stack": "React 19, TypeScript 5.7, Vite 6",
+      "scope": "internal"
     }
   ],
   "additional_repos_suggested": [
@@ -75,7 +93,8 @@ Save to the designated output path as JSON:
       "name": "shared-auth-lib",
       "reason": "frontend-app imports from @company/auth which lives here",
       "url": "git@github.com:company/shared-auth-lib.git",
-      "discovered_from": "frontend-app/package.json"
+      "discovered_from": "frontend-app/package.json",
+      "scope_hint": "shared — imported by 2 configured repos (frontend-app, backend)"
     }
   ],
   "total_repos_analyzed": 3,

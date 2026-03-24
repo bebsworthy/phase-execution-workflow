@@ -1,7 +1,6 @@
 ---
 name: groom-intake
 description: Read issue from tracker (via MCP/CLI), extract all content, detect re-runs, normalize for downstream agents
-tools: Read, Grep, Glob, Bash, Write, WebFetch
 skills:
   - pew-groom
 ---
@@ -29,7 +28,9 @@ If MCP tools for the specified tracker aren't available, try CLI:
 
 ### 3. User Paste
 
-If neither MCP nor CLI tools are available for the tracker type, report that no integration was found. The orchestrator will ask the user to paste the issue content.
+If neither MCP nor CLI tools are available for the tracker type, report that no integration was found and stop. The orchestrator will ask the user to paste the issue content.
+
+**IMPORTANT**: Do NOT attempt to curl, wget, or HTTP-request the tracker URL directly. Tracker APIs require authentication tokens that you do not have. If MCP and CLI both fail, report the failure immediately — do not improvise alternative access methods.
 
 ## Content Extraction
 

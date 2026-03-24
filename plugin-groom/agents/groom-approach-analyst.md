@@ -40,6 +40,7 @@ For each candidate approach, assess:
 | **Risk** | What could go wrong, rollback difficulty |
 | **Precedent** | Does the codebase already use this pattern? |
 | **Effort** | Rough relative effort (not a full estimate — that comes later) |
+| **Contract Impact** | Does this approach change the public interface, return values, or behavior of a `shared` or `external` repo (check `scope` in `03-architecture.md`)? If yes: what changes, is it backward-compatible, what coordination is needed? |
 | **Trade-offs** | What you gain vs. what you give up |
 
 Ground every evaluation in actual code references — file paths, function names, existing patterns found via Grep/Glob.
@@ -47,9 +48,10 @@ Ground every evaluation in actual code references — file paths, function names
 ### 3. Recommend
 
 Pick a recommended approach with a clear rationale. The recommendation should favor:
-1. Consistency with existing codebase patterns (strongest signal)
-2. Simplest solution that meets requirements
-3. Lowest risk
+1. **No silent contract changes to shared/external dependencies** — never recommend an approach that changes the behavior, return values, or semantics of a `shared` or `external` repo without explicitly flagging the downstream impact and coordination cost. Behavioral changes (same signature, different output) are the highest-risk category. If an approach requires such a change, it must be called out in **Cons** and **Contract impact** with the scope classification.
+2. Consistency with existing codebase patterns (strongest signal)
+3. Simplest solution that meets requirements
+4. Lowest risk
 
 If approaches are genuinely equivalent, say so — don't force a recommendation.
 
@@ -70,6 +72,8 @@ Save to the designated output path as markdown:
 - **How it works**: 2-3 sentences grounded in code refs
 - **Scope**: repos/files touched (approximate)
 - **Precedent**: similar patterns found in codebase? [file refs]
+- **Contract impact**: None / Breaking / Backward-compatible extension
+  - If not None: which repo (+ its scope), what changes, downstream coordination needed
 - **Pros**: bullet list
 - **Cons**: bullet list
 - **Relative effort**: Low / Medium / High
@@ -86,6 +90,7 @@ Save to the designated output path as markdown:
 | Scope | ... | ... | ... |
 | Complexity | ... | ... | ... |
 | Risk | ... | ... | ... |
+| Contract impact | ... | ... | ... |
 | Codebase precedent | ... | ... | ... |
 | Relative effort | ... | ... | ... |
 

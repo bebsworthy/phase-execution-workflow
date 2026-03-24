@@ -57,6 +57,11 @@ For each repo needing analysis (full or incremental), examine:
 - Dependency direction (which modules depend on which)
 - Shared types/interfaces between modules
 
+**Dependency Scope & Exported Surface** (for `shared` or `external` scope repos):
+- Read `scope` from `02-repos.json` for each repo
+- For repos with scope `shared` or `external`: identify the **exported API surface** — public functions, exported types/interfaces, REST/GraphQL endpoints, event contracts, CLI commands
+- This surface represents the "contract" that other teams depend on — downstream agents use it to detect breaking changes
+
 ### 4. Save Snapshots
 
 For each repo, save/update:
@@ -95,11 +100,16 @@ Write a consolidated architecture overview to the issue-specific directory. This
   "external_apis": ["stripe", "sendgrid"],
   "module_boundaries": [
     {"from": "auth", "to": "database", "type": "import"}
-  ]
+  ],
+  "scope": "internal",
+  "exported_surface": []
 }
 ```
 
-**Consolidated overview**: Save to the designated output path as markdown with per-repo sections.
+- `scope`: from `02-repos.json` — `internal`, `shared`, or `external`
+- `exported_surface`: populated only for `shared`/`external` repos — list of public functions, exported types, REST endpoints, and event contracts that form the dependency contract. Leave empty for `internal` repos.
+
+**Consolidated overview**: Save to the designated output path as markdown with per-repo sections. For `shared`/`external` repos, include a **Contract Surface** subsection listing the exported API surface.
 
 Do NOT commit any changes.
 

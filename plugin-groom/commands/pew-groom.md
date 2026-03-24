@@ -159,6 +159,24 @@ Output: `Phase 2/6 — Discovering repositories and building architecture snapsh
 
 If the user confirms additional repos, re-spawn `groom-repo-scout` with the confirmed additions.
 
+### Scope Classification Gate
+
+Read `02-repos.json`. Check if any repo (including newly added ones) has a missing or null `scope`.
+
+If unclassified repos exist, present them via `AskUserQuestion`:
+```json
+{
+  "question": "These repositories need a scope classification (controls how contract/interface changes are evaluated):\n\n{list of repo names without scope}\n\nScope options:\n- **internal**: owned by your team only — safe to refactor freely\n- **shared**: consumed by other teams — contract changes need coordination\n- **external**: third-party / published — contract is fixed\n\n{If any repos have scope_hint from discovery, show: \"Suggested: {repo} → {scope_hint}\"}\n\nPlease classify each repo.",
+  "header": "Scope",
+  "options": [
+    {"label": "All internal", "description": "All listed repos are team-internal"},
+    {"label": "I'll specify", "description": "Let me classify each repo individually"}
+  ]
+}
+```
+
+Save confirmed scopes back to `groom.yaml` under each repo's `scope` field and update `02-repos.json` so downstream agents have the classification. This gate only fires when repos are missing scope — once classified, future runs skip it.
+
 ### Spawn `groom-arch-snapshot`
 
 > Build architecture snapshots for all repos in `{cwd}/groom/{issue-id}/02-repos.json`. Check for cached snapshots in `{cwd}/groom/knowledge/`. Reuse fresh snapshots (matching git HEAD), rebuild stale ones. Save consolidated architecture to `{cwd}/groom/{issue-id}/03-architecture.md` and per-repo snapshots to `{cwd}/groom/knowledge/{repo-name}/architecture.json`.

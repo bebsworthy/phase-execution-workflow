@@ -69,17 +69,31 @@ Check for dependencies on external systems:
 - Version compatibility concerns
 - License implications of new dependencies
 
+### 7. Contract & Interface Changes
+
+Check `02-repos.json` and `03-architecture.md` for repos with `scope: shared` or `scope: external`. For each such repo:
+
+- Does the selected approach (from `04-approaches.md`) modify the repo's exported API surface — public functions, exported types, REST endpoints, return values, field semantics, event contracts?
+- Classify the change type:
+  - **Breaking** (removing, renaming, changing return type/semantics): **Hard Blocker** — requires coordination with all consuming teams before implementation
+  - **Behavioral** (same signature but different output/semantics — e.g., a field silently returning different data): **Hard Blocker** — silent contract violations are the highest-risk category because consumers won't get compile-time errors, only runtime surprises
+  - **Additive** (new fields, new optional parameters, new endpoints): **Soft Blocker** — note coordination needs, consumers may want to adopt new capabilities
+  - **No change**: no blocker
+- For `external` repos: any contract modification is a **Hard Blocker** — the team does not control the external contract
+- Note which consuming teams/services would be affected (if discoverable from architecture or repo structure)
+
 ## Output
 
 Write a markdown report to the designated output path using the blocker classification from the pew-groom skill framework. Structure as:
 
-1. **Blocker Summary**: count by type (hard/soft/debt/dependency)
+1. **Blocker Summary**: count by type (hard/soft/debt/dependency/contract)
 2. **Hard Blockers** (if any): each with description, evidence, required resolution
 3. **Soft Blockers**: each with description, evidence, mitigation strategy
 4. **Technical Debt**: each with location (file:line), description, added effort estimate
 5. **Security Risks**: each with severity, description, recommendation
 6. **Performance Risks**: each with description, potential impact, mitigation
 7. **External Dependencies**: each with status, risk level, fallback plan
+8. **Contract & Interface Changes**: each with repo name, scope, change type (breaking/behavioral/additive), affected surface, downstream impact
 
 Do NOT commit any changes.
 

@@ -151,6 +151,10 @@ repos:
   - name: string       # Short name (used as directory name under repos/)
     url: string        # Git clone URL
     branch: string     # Branch to checkout (default: main)
+    scope: string      # internal | shared | external (default: internal)
+                       #   internal — owned/consumed by this team only
+                       #   shared   — consumed by other teams, contract changes need coordination
+                       #   external — third-party/published, contract is fixed
 tracker:
   type: string         # linear | jira | youtrack | github | gitlab
   project: string      # Project key or identifier
