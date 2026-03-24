@@ -63,6 +63,22 @@
         "context-engineering"
       ],
       "category": "quality"
+    },
+    {
+      "name": "pew-style",
+      "source": "./plugin-style",
+      "description": "Design language migration analysis — compare app styling against a target reference and produce a phased migration plan",
+      "version": "4.0.11",
+      "keywords": [
+        "design-system",
+        "styling",
+        "migration",
+        "css",
+        "design-tokens",
+        "visual-design",
+        "component-hierarchy"
+      ],
+      "category": "design"
     }
   ]
 }

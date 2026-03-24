@@ -1,0 +1,42 @@
+# style.yaml -- Configuration for /pew-style design migration analysis
+#
+# Place this file in your workspace root.
+# The orchestrator will create this interactively if it doesn't exist.
+
+# The application to analyze
+app:
+  root: ./                            # Path to the app's root directory
+  # Optional: narrow the analysis scope
+  component_dirs:                     # Override auto-detected component directories
+    # - src/components
+    # - src/ui
+  style_dirs:                         # Override auto-detected style directories
+    # - src/styles
+    # - src/theme
+  ignore:                             # Glob patterns to exclude
+    - node_modules
+    - dist
+    - build
+    - "**/*.test.*"
+    - "**/*.spec.*"
+
+# The target reference design
+reference:
+  # Provide ONE or BOTH of these:
+  screenshots: ""                     # Directory containing PNG/JPG files
+  source: ""                          # Directory containing exported source code (React/HTML)
+  # Optional metadata about the reference
+  tool: ""                            # Design tool used: figma-ai, v0, google-stitch, manual
+  description: ""                     # Brief description of the target design
+
+# Analysis settings
+settings:
+  project_name: my-project            # Used for output directory naming
+  include_dark_mode: false            # Analyze dark mode tokens if present
+  include_responsive: true            # Analyze responsive breakpoints and behavior
+  migration_target:
+    # What styling approach should the migration target?
+    # Leave empty to match the app's current approach.
+    # Options: tailwind, css-modules, styled-components, css-vars, scss
+    approach: ""
+  max_components: 200                 # Cap on components to analyze (prevents runaway)
