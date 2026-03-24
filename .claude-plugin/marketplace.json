@@ -11,7 +11,7 @@
       "name": "pew",
       "source": "./plugin",
       "description": "7-step delivery loop with YAML tracking, quality gates, council review, and sub-agents",
-      "version": "4.0.9",
+      "version": "4.0.10",
       "keywords": [
         "workflow",
         "phase",
@@ -25,7 +25,7 @@
       "name": "pew-doc",
       "source": "./plugin-doc",
       "description": "Generate comprehensive application documentation from codebase analysis \u2014 product overview, architecture, internals, API contracts, and data models",
-      "version": "4.0.9",
+      "version": "4.0.10",
       "keywords": [
         "documentation",
         "architecture",
@@ -40,7 +40,7 @@
       "name": "pew-groom",
       "source": "./plugin-groom",
       "description": "Automated technical grooming \u2014 multi-phase issue analysis against actual code across multiple repositories",
-      "version": "4.0.9",
+      "version": "4.0.10",
       "keywords": [
         "grooming",
         "issue-analysis",
@@ -54,7 +54,7 @@
       "name": "pew-prompt-audit",
       "source": "./plugin-prompt",
       "description": "Prompt quality audit \u2014 multi-phase analysis of prompt, agent, and skill definitions for defects, conflicts, and optimization opportunities",
-      "version": "4.0.9",
+      "version": "4.0.10",
       "keywords": [
         "prompt-engineering",
         "prompt-optimization",

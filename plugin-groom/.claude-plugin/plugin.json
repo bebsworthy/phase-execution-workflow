@@ -1,7 +1,7 @@
 {
   "name": "pew-groom",
-  "description": "Automated technical grooming — multi-phase issue analysis against actual code across multiple repositories. Bridges Product Owners and Tech Leads.",
-  "version": "4.0.9",
+  "description": "Automated technical grooming \u2014 multi-phase issue analysis against actual code across multiple repositories. Bridges Product Owners and Tech Leads.",
+  "version": "4.0.10",
   "author": {
     "name": "Boyd Stratton"
   },
