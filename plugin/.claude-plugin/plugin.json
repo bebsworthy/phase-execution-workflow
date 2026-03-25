@@ -1,7 +1,7 @@
 {
   "name": "pew",
   "description": "Phase Execution Workflow \u2014 7-step delivery loop (IDEAS \u2192 BRD \u2192 RESEARCH \u2192 SPEC \u2192 PLAN \u2192 BUILD \u2192 CHECK/CLOSE) with YAML tracking, quality gates, council review, and sub-agents.",
-  "version": "4.0.11",
+  "version": "4.0.12",
   "author": {
     "name": "Boyd Stratton"
   },

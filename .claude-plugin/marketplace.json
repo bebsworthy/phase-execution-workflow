@@ -11,7 +11,7 @@
       "name": "pew",
       "source": "./plugin",
       "description": "7-step delivery loop with YAML tracking, quality gates, council review, and sub-agents",
-      "version": "4.0.11",
+      "version": "4.0.12",
       "keywords": [
         "workflow",
         "phase",
@@ -25,7 +25,7 @@
       "name": "pew-doc",
       "source": "./plugin-doc",
       "description": "Generate comprehensive application documentation from codebase analysis \u2014 product overview, architecture, internals, API contracts, and data models",
-      "version": "4.0.11",
+      "version": "4.0.12",
       "keywords": [
         "documentation",
         "architecture",
@@ -40,7 +40,7 @@
       "name": "pew-groom",
       "source": "./plugin-groom",
       "description": "Automated technical grooming \u2014 multi-phase issue analysis against actual code across multiple repositories",
-      "version": "4.0.11",
+      "version": "4.0.12",
       "keywords": [
         "grooming",
         "issue-analysis",
@@ -54,7 +54,7 @@
       "name": "pew-prompt-audit",
       "source": "./plugin-prompt",
       "description": "Prompt quality audit \u2014 multi-phase analysis of prompt, agent, and skill definitions for defects, conflicts, and optimization opportunities",
-      "version": "4.0.11",
+      "version": "4.0.12",
       "keywords": [
         "prompt-engineering",
         "prompt-optimization",
@@ -67,8 +67,8 @@
     {
       "name": "pew-style",
       "source": "./plugin-style",
-      "description": "Design language migration analysis — compare app styling against a target reference and produce a phased migration plan",
-      "version": "4.0.11",
+      "description": "Design language migration analysis \u2014 compare app styling against a target reference and produce a phased migration plan",
+      "version": "4.0.12",
       "keywords": [
         "design-system",
         "styling",
@@ -83,8 +83,8 @@
     {
       "name": "pew-react-audit",
       "source": "./plugin-react-audit",
-      "description": "Comprehensive code quality audit — TypeScript patterns, security, duplication, complexity, debt, and remediation roadmap",
-      "version": "4.0.11",
+      "description": "Comprehensive code quality audit \u2014 TypeScript patterns, security, duplication, complexity, debt, and remediation roadmap",
+      "version": "4.0.12",
       "keywords": [
         "code-quality",
         "audit",
@@ -98,8 +98,8 @@
     {
       "name": "pew-test-audit",
       "source": "./plugin-test-audit",
-      "description": "Comprehensive test suite quality audit — tautological tests, over-mocking, flaky tests, coverage gaps, and remediation",
-      "version": "4.0.11",
+      "description": "Comprehensive test suite quality audit \u2014 tautological tests, over-mocking, flaky tests, coverage gaps, and remediation",
+      "version": "4.0.12",
       "keywords": [
         "test-quality",
         "audit",
@@ -113,8 +113,8 @@
     {
       "name": "pew-ux-audit",
       "source": "./plugin-ux-audit",
-      "description": "Comprehensive UX/UI audit — user goals, implementation review, pattern research, 12-layer evaluation, and improvement proposals",
-      "version": "4.0.11",
+      "description": "Comprehensive UX/UI audit \u2014 user goals, implementation review, pattern research, 12-layer evaluation, and improvement proposals",
+      "version": "4.0.12",
       "keywords": [
         "ux",
         "ui",

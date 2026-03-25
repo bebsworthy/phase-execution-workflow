@@ -1,7 +1,7 @@
 {
   "name": "pew-test-audit",
-  "description": "Comprehensive test suite quality audit with 10 specialist agents across 5 phases — tautological tests, over-mocking, flaky tests, coverage gaps, maintainability, and remediation.",
-  "version": "4.0.11",
+  "description": "Comprehensive test suite quality audit with 10 specialist agents across 5 phases \u2014 tautological tests, over-mocking, flaky tests, coverage gaps, maintainability, and remediation.",
+  "version": "4.0.12",
   "author": {
     "name": "Boyd Stratton"
   },
