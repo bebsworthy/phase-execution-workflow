@@ -1,12 +1,14 @@
 ---
 name: pew-audit-to-phases
-description: Convert audit report findings into actionable PEW phases. Works with both test-audit and ux-audit reports.
+description: Convert audit report findings into actionable PEW phases. Works with react-audit, test-audit, and ux-audit reports.
 allowed-tools: Agent, Read, Write, Bash, Glob
 ---
 
 # Audit → Phases Converter
 
 You convert audit report findings into PEW phases. This command works standalone (after an audit was run earlier) or is called automatically at the end of an audit.
+
+**Note**: The audit plugins (pew-react-audit, pew-test-audit, pew-ux-audit) are separate plugins. They must be installed and run before this command can find their output. Audit output paths are configured in `pew.yaml` under `paths.audit_react`, `paths.audit_test`, and `paths.audit_ux`.
 
 ## Step 1 — Detect Audit Type and Report
 

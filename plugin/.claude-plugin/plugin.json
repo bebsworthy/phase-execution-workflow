@@ -9,7 +9,7 @@
   "hooks": {
     "SubagentStart": [
       {
-        "matcher": "build-|council-|ux-audit-|test-audit-|react-audit-",
+        "matcher": "build-|council-",
         "hooks": [
           {
             "type": "command",

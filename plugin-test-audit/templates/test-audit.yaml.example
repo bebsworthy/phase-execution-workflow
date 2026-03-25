@@ -1,0 +1,17 @@
+# test-audit.yaml -- Configuration for /pew-test-audit
+#
+# Place this file in your project root.
+# The orchestrator will create this interactively if it doesn't exist.
+
+# Where audit output files go
+output_dir: ./audit/test
+
+# Optional: narrow the audit scope
+include:
+  # - src/
+  # - tests/
+exclude:
+  - node_modules
+  - dist
+  - build
+  - coverage

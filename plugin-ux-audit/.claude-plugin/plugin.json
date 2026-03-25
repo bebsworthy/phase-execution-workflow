@@ -1,0 +1,18 @@
+{
+  "name": "pew-ux-audit",
+  "description": "Comprehensive UX/UI audit with 5 sequential specialist agents — user goals, implementation review, pattern research, 12-layer evaluation, and improvement proposals.",
+  "version": "4.0.11",
+  "author": {
+    "name": "Boyd Stratton"
+  },
+  "license": "MIT",
+  "keywords": [
+    "ux",
+    "ui",
+    "audit",
+    "accessibility",
+    "usability",
+    "design-patterns",
+    "user-experience"
+  ]
+}

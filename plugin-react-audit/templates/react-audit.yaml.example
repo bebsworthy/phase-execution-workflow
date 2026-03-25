@@ -1,0 +1,19 @@
+# react-audit.yaml -- Configuration for /pew-react-audit
+#
+# Place this file in your project root.
+# The orchestrator will create this interactively if it doesn't exist.
+
+# Where audit output files go
+output_dir: ./audit/react
+
+# Optional: narrow the audit scope
+include:
+  # - src/
+  # - lib/
+exclude:
+  - node_modules
+  - dist
+  - build
+  - coverage
+  - "**/*.test.*"
+  - "**/*.spec.*"

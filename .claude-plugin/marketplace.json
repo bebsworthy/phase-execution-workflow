@@ -79,6 +79,51 @@
         "component-hierarchy"
       ],
       "category": "design"
+    },
+    {
+      "name": "pew-react-audit",
+      "source": "./plugin-react-audit",
+      "description": "Comprehensive code quality audit — TypeScript patterns, security, duplication, complexity, debt, and remediation roadmap",
+      "version": "4.0.11",
+      "keywords": [
+        "code-quality",
+        "audit",
+        "react",
+        "typescript",
+        "security",
+        "dead-code"
+      ],
+      "category": "quality"
+    },
+    {
+      "name": "pew-test-audit",
+      "source": "./plugin-test-audit",
+      "description": "Comprehensive test suite quality audit — tautological tests, over-mocking, flaky tests, coverage gaps, and remediation",
+      "version": "4.0.11",
+      "keywords": [
+        "test-quality",
+        "audit",
+        "testing",
+        "mocking",
+        "flaky-tests",
+        "coverage"
+      ],
+      "category": "quality"
+    },
+    {
+      "name": "pew-ux-audit",
+      "source": "./plugin-ux-audit",
+      "description": "Comprehensive UX/UI audit — user goals, implementation review, pattern research, 12-layer evaluation, and improvement proposals",
+      "version": "4.0.11",
+      "keywords": [
+        "ux",
+        "ui",
+        "audit",
+        "accessibility",
+        "usability",
+        "design-patterns"
+      ],
+      "category": "quality"
     }
   ]
 }

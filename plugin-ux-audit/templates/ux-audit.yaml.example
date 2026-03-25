@@ -1,0 +1,18 @@
+# ux-audit.yaml -- Configuration for /pew-ux-audit
+#
+# Place this file in your project root.
+# The orchestrator will create this interactively if it doesn't exist.
+
+# Where audit output files go
+output_dir: ./audit/ux
+
+# Optional: narrow the audit scope
+include:
+  # - src/
+  # - pages/
+exclude:
+  - node_modules
+  - dist
+  - build
+  - "**/*.test.*"
+  - "**/*.spec.*"
