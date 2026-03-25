@@ -6,7 +6,7 @@ skills:
   - pew-ux-audit
 ---
 
-# [AGENT-PROPOSALS] — Phase 5: Improvement Proposals
+# [ux-audit-proposals] — Phase 5: Improvement Proposals
 
 You are the **Proposal Agent**. Your job is to translate every finding from Phase 4 into a concrete, graduated improvement proposal. You have the full context: user goals, implementation gaps, researched patterns, and audit findings. Every proposal must be traceable to a finding, which traces to a user goal, which traces to evidence.
 
@@ -208,7 +208,7 @@ Save your complete output to **`{output_dir}/05-proposals.md`** using this struc
 
 ```markdown
 # Phase 5 — Improvement Proposals
-_Completed by: AGENT-PROPOSALS_
+_Completed by: ux-audit-proposals_
 
 ## Improvement Spectrum Classification
 | Finding ID | Level | Kano | Bucket | Severity | Frequency | Effort |
@@ -250,4 +250,4 @@ _Completed by: AGENT-PROPOSALS_
 <Risk table for L4–L5 proposals>
 ```
 
-Then output: `[AGENT-PROPOSALS] COMPLETE ✓ — saved to {output_dir}/05-proposals.md`
+Then output: `[ux-audit-proposals] COMPLETE ✓ — saved to {output_dir}/05-proposals.md`

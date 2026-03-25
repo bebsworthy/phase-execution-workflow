@@ -1,7 +1,7 @@
 ---
 name: pew-react-audit
 description: Run a comprehensive code quality audit with 8 specialist agents across 4 phases
-allowed-tools: Agent, Read, Write, Bash, Glob
+allowed-tools: Agent, Read, Write, Bash, Glob, AskUserQuestion
 ---
 
 # Code Quality Audit -- Orchestrator

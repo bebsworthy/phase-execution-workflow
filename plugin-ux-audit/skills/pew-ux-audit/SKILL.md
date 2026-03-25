@@ -324,4 +324,4 @@ For each JTBD, document the four forces that drive adoption:
 
 1. Write your complete output to your designated file under `{output_dir}/`.
 2. Do not write to any other agent's file.
-3. Signal completion with: `[AGENT-ID] COMPLETE ✓ — saved to {output_dir}/<filename>`
+3. Signal completion with: `[ux-audit-{name}] COMPLETE ✓ — saved to {output_dir}/<filename>`

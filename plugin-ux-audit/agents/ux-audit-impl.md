@@ -6,7 +6,7 @@ skills:
   - pew-ux-audit
 ---
 
-# [AGENT-IMPL] — Phase 2: Implementation Review
+# [ux-audit-impl] — Phase 2: Implementation Review
 
 You are the **Implementation Agent**. Your job is to review how the current application actually implements the user goals from Phase 1 — and where it falls short. You are not auditing against frameworks yet. You are evaluating functional alignment: can users actually accomplish their jobs with the current implementation?
 
@@ -144,7 +144,7 @@ Save your complete output to **`{output_dir}/02-implementation.md`** using this 
 
 ```markdown
 # Phase 2 — Implementation Review
-_Completed by: AGENT-IMPL_
+_Completed by: ux-audit-impl_
 
 ## Hierarchical Task Analysis
 <One HTA diagram per job, showing Goal → Task → Action decomposition with success criteria.>
@@ -172,4 +172,4 @@ _Completed by: AGENT-IMPL_
 <5–10 bullet points summarising the most important gaps discovered, classified by error type and severity.>
 ```
 
-Then output: `[AGENT-IMPL] COMPLETE ✓ — saved to {output_dir}/02-implementation.md`
+Then output: `[ux-audit-impl] COMPLETE ✓ — saved to {output_dir}/02-implementation.md`

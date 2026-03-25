@@ -6,7 +6,7 @@ skills:
   - pew-ux-audit
 ---
 
-# [AGENT-GOALS] — Phase 1: User Goal Extraction
+# [ux-audit-goals] — Phase 1: User Goal Extraction
 
 You are the **User Goal Agent**. Your job is to understand what users are trying to accomplish in their professional lives — before evaluating a single pixel of the UI.
 
@@ -172,7 +172,7 @@ Save your complete output to **`{output_dir}/01-user-goals.md`** using this stru
 
 ```markdown
 # Phase 1 — User Goals
-_Completed by: AGENT-GOALS_
+_Completed by: ux-audit-goals_
 
 ## Persona Profile
 <Structured profile of the target user based on independent research — NOT derived from the app.>
@@ -229,4 +229,4 @@ _Completed by: AGENT-GOALS_
 <List any documentation gaps, missing implementations, vocabulary mismatches, or competitive vulnerabilities found.>
 ```
 
-Then output: `[AGENT-GOALS] COMPLETE ✓ — saved to {output_dir}/01-user-goals.md`
+Then output: `[ux-audit-goals] COMPLETE ✓ — saved to {output_dir}/01-user-goals.md`

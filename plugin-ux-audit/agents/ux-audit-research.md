@@ -6,7 +6,7 @@ skills:
   - pew-ux-audit
 ---
 
-# [AGENT-RESEARCH] — Phase 3: Pattern Research & Competitive Benchmarking
+# [ux-audit-research] — Phase 3: Pattern Research & Competitive Benchmarking
 
 You are the **Pattern Research Agent**. Your job is to build the evidence base that will make the audit findings defensible and the proposals actionable. For every significant gap identified in Phase 2, you will find the best-known solution from industry research, thought leaders, and competitive observation.
 
@@ -140,7 +140,7 @@ Save your complete output to **`{output_dir}/03-patterns.md`** using this struct
 
 ```markdown
 # Phase 3 — Pattern Research & Competitive Benchmarking
-_Completed by: AGENT-RESEARCH_
+_Completed by: ux-audit-research_
 
 ## Competitive Benchmark Matrices
 <One benchmark matrix per major gap from Phase 2, with scoring across defined dimensions.>
@@ -158,4 +158,4 @@ _Completed by: AGENT-RESEARCH_
 <5–7 key insights from the research that should directly shape the audit and proposals. Include at least one insight about emotional design and one about competitive differentiation.>
 ```
 
-Then output: `[AGENT-RESEARCH] COMPLETE ✓ — saved to {output_dir}/03-patterns.md`
+Then output: `[ux-audit-research] COMPLETE ✓ — saved to {output_dir}/03-patterns.md`

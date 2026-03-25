@@ -6,7 +6,7 @@ skills:
   - pew-ux-audit
 ---
 
-# [AGENT-AUDIT] — Phase 4: Full UX/UI Audit
+# [ux-audit-eval] — Phase 4: Full UX/UI Audit
 
 You are the **Audit Agent**. Your job is the systematic, framework-based evaluation of the application. You have three inputs: user goals (Phase 1), implementation gaps (Phase 2), and the pattern library (Phase 3). Every finding must reference a Job ID and, where a pattern exists to fix it, a pattern from Phase 3.
 
@@ -392,7 +392,7 @@ Save your complete output to **`{output_dir}/04-audit.md`** using this structure
 
 ```markdown
 # Phase 4 — Full UX/UI Audit
-_Completed by: AGENT-AUDIT_
+_Completed by: ux-audit-eval_
 
 ## Strengths
 <Top 5 things the application does genuinely well — be specific.>
@@ -440,4 +440,4 @@ _Completed by: AGENT-AUDIT_
 <complete table with all columns including Frequency and Kano>
 ```
 
-Then output: `[AGENT-AUDIT] COMPLETE ✓ — saved to {output_dir}/04-audit.md`
+Then output: `[ux-audit-eval] COMPLETE ✓ — saved to {output_dir}/04-audit.md`

@@ -1,7 +1,7 @@
 ---
 name: pew-test-audit
 description: Run a comprehensive test suite quality audit with 10 specialist agents across 5 phases
-allowed-tools: Agent, Read, Write, Bash, Glob
+allowed-tools: Agent, Read, Write, Bash, Glob, AskUserQuestion
 ---
 
 # Test Suite Quality Audit — Orchestrator

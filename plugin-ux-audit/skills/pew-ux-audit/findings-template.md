@@ -4,7 +4,7 @@ Use this template for your agent's output file.
 
 ```markdown
 # Phase N — [Phase Title]
-_Completed by: [AGENT-ID]_
+_Completed by: [ux-audit-{name}]_
 
 ## [Phase-specific sections as defined in agent instructions]
 

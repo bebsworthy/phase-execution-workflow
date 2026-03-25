@@ -1,7 +1,7 @@
 ---
 name: pew-ux-audit
 description: Run a comprehensive UX/UI audit with 5 sequential specialist agents
-allowed-tools: Agent, Read, Write, Bash, Glob
+allowed-tools: Agent, Read, Write, Bash, Glob, AskUserQuestion
 ---
 
 # UX/UI Audit — Orchestrator
