@@ -25,6 +25,14 @@ def repo(tmp_path: Path) -> Path:
     tracker = tmp_path / "phases/phase-tracker.yaml"
     tracker.write_text("phases: []\n", encoding="utf-8")
 
+    # Valid config: real project name + gates off for unit test ergonomics
+    (tmp_path / "pew.yaml").write_text(
+        yaml.dump({
+            "project": {"name": "TestProject"},
+            "approval_gates": {"before_build": False, "before_close": False},
+        }), encoding="utf-8",
+    )
+
     plan = tmp_path / "phases/implementation-plan.md"
     plan.write_text(
         "# Plan\n\n## 1.1 Phase Status Tracker\n\n"
@@ -81,6 +89,21 @@ def _add_phase(repo: Path, number: int | float = 24, title: str = "Search",
         cli += ["--brief-file", brief_file]
     code, _ = _run(repo, *cli)
     return code
+
+
+def _complete_step(repo: Path, phase_num: int | float, step: str,
+                   title: str = "Search") -> tuple[int, str]:
+    """Set step in_progress then complete, creating the artifact file if needed."""
+    _run(repo, "set-step-status", "--phase", str(phase_num),
+         "--step", step, "--status", "in_progress")
+    # Create artifact file so the completion gate passes
+    if step in pw.STEP_FILE:
+        slug = pw.kebab_case(f"phase-{phase_num}-{title}")
+        pdir = repo / "phases" / slug
+        pdir.mkdir(parents=True, exist_ok=True)
+        (pdir / pw.STEP_FILE[step]).write_text(f"# {step}\nDone.\n")
+    return _run(repo, "set-step-status", "--phase", str(phase_num),
+                "--step", step, "--status", "complete")
 
 
 # ---------------------------------------------------------------------------
@@ -315,29 +338,26 @@ class TestSetStepStatus:
 
     def test_auto_close(self, repo: Path):
         _add_phase(repo)
-        # Complete all steps
+        # Complete all steps (with artifacts)
         for step in pw.STEP_ORDER:
-            _run(repo, "set-step-status", "--phase", "24",
-                 "--step", step, "--status", "in_progress")
-            _run(repo, "set-step-status", "--phase", "24",
-                 "--step", step, "--status", "complete")
+            _complete_step(repo, 24, step)
         data = pw.load_tracker(repo)
         assert data["phases"][0]["status"] == "complete"
         assert data["phases"][0]["end_commit"] is not None
 
     def test_invalid_step(self, repo: Path):
         _add_phase(repo)
-        code, out = _run(repo, "set-step-status", "--phase", "24",
-                         "--step", "nope", "--status", "in_progress")
-        assert code == 1
-        assert "Invalid step" in out
+        with pytest.raises(SystemExit) as exc_info:
+            _run(repo, "set-step-status", "--phase", "24",
+                 "--step", "nope", "--status", "in_progress")
+        assert exc_info.value.code == 2  # argparse rejects invalid choice
 
     def test_invalid_status(self, repo: Path):
         _add_phase(repo)
-        code, out = _run(repo, "set-step-status", "--phase", "24",
-                         "--step", "ideas", "--status", "bad")
-        assert code == 1
-        assert "Invalid status" in out
+        with pytest.raises(SystemExit) as exc_info:
+            _run(repo, "set-step-status", "--phase", "24",
+                 "--step", "ideas", "--status", "bad")
+        assert exc_info.value.code == 2  # argparse rejects invalid choice
 
     def test_phase_not_found(self, repo: Path):
         code, out = _run(repo, "set-step-status", "--phase", "999",
@@ -510,12 +530,8 @@ class TestCheckDependencies:
         """Phase 2 can proceed if phase 1 has completed through plan."""
         _add_phase(repo, 1, "First")
         _add_phase(repo, 2, "Second", depends_on="1")
-        # Complete phase 1 through plan (5 steps)
         for step in ["ideas", "brd", "research", "spec", "plan"]:
-            _run(repo, "set-step-status", "--phase", "1",
-                 "--step", step, "--status", "in_progress")
-            _run(repo, "set-step-status", "--phase", "1",
-                 "--step", step, "--status", "complete")
+            _complete_step(repo, 1, step, "First")
         code, out = _run(repo, "check-dependencies", "--phase", "2",
                          "--through", "plan")
         assert code == 0
@@ -526,10 +542,7 @@ class TestCheckDependencies:
         _add_phase(repo, 1, "First")
         _add_phase(repo, 2, "Second", depends_on="1")
         for step in ["ideas", "brd", "research"]:
-            _run(repo, "set-step-status", "--phase", "1",
-                 "--step", step, "--status", "in_progress")
-            _run(repo, "set-step-status", "--phase", "1",
-                 "--step", step, "--status", "complete")
+            _complete_step(repo, 1, step, "First")
         code, out = _run(repo, "check-dependencies", "--phase", "2",
                          "--through", "plan")
         assert code == 1
@@ -539,12 +552,8 @@ class TestCheckDependencies:
         """Skipped steps count as completed for --through checks."""
         _run(repo, "add-phase", "--number", "1", "--title", "First", "--size", "small")
         _add_phase(repo, 2, "Second", depends_on="1")
-        # Small phase: ideas and research are skipped. Complete brd, spec, plan.
         for step in ["brd", "spec", "plan"]:
-            _run(repo, "set-step-status", "--phase", "1",
-                 "--step", step, "--status", "in_progress")
-            _run(repo, "set-step-status", "--phase", "1",
-                 "--step", step, "--status", "complete")
+            _complete_step(repo, 1, step, "First")
         code, out = _run(repo, "check-dependencies", "--phase", "2",
                          "--through", "plan")
         assert code == 0
@@ -745,7 +754,8 @@ class TestDumpConfig:
         code, out = _run(repo, "dump-config")
         assert code == 0
         config = json.loads(out)
-        assert config["project"]["name"] == "My Project"
+        # Fixture writes pew.yaml with project.name = "TestProject"
+        assert config["project"]["name"] == "TestProject"
         assert config["paths"]["tracker"] == "phases/phase-tracker.yaml"
         assert config["council"]["enabled"] is True
         assert config["council"]["max_findings_per_expert"] == 15
@@ -792,6 +802,8 @@ class TestCustomPaths:
     def custom_repo(self, tmp_path: Path) -> Path:
         """Create a repo with non-default paths via pew.yaml."""
         (tmp_path / "pew.yaml").write_text(yaml.dump({
+            "project": {"name": "CustomPathProject"},
+            "approval_gates": {"before_build": False, "before_close": False},
             "paths": {
                 "tracker": "workflow/tracker.yaml",
                 "plan": "workflow/plan.md",
@@ -931,6 +943,287 @@ class TestPhaseSizing:
         tracker.write_text(yaml.dump({"phases": [{"number": 1, "title": "Old", "status": "not_started"}]}))
         data = pw.load_tracker(tmp_path)
         assert data["phases"][0]["size"] == "large"
+
+
+# ---------------------------------------------------------------------------
+# Verification gate on close
+# ---------------------------------------------------------------------------
+
+class TestVerificationGate:
+    """Phase close runs config.commands.verify and refuses to close on failure."""
+
+    def _advance_to_check(self, repo: Path, verify_cmd: str = "true"):
+        """Create a small phase with a verify command and advance to check in_progress."""
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "project": {"name": "GateTest"},
+            "commands": {"verify": verify_cmd},
+            "approval_gates": {"before_build": False, "before_close": False},
+        }))
+        _run(repo, "add-phase", "--number", "1", "--title", "Gate Test", "--size", "small")
+        for step in ["brd", "spec", "plan", "build"]:
+            _complete_step(repo, 1, step, "Gate Test")
+        _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "in_progress")
+
+    def test_close_blocked_when_verify_fails(self, repo: Path):
+        self._advance_to_check(repo, verify_cmd="exit 1")
+        code, out = _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "complete")
+        assert code == 1
+        assert "BLOCKED" in out
+
+    def test_close_allowed_when_verify_passes(self, repo: Path):
+        self._advance_to_check(repo, verify_cmd="true")
+        code, out = _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "complete")
+        assert code == 0
+        assert "auto-closed" in out
+
+    def test_close_shows_failing_output(self, repo: Path):
+        self._advance_to_check(repo, verify_cmd="echo 'FAIL: 2 tests failed' && exit 1")
+        code, out = _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "complete")
+        assert code == 1
+        assert "2 tests failed" in out
+
+    def test_close_allowed_when_no_verify_command(self, repo: Path):
+        """If no verify command is configured, close proceeds (user hasn't set it up)."""
+        self._advance_to_check(repo, verify_cmd="")
+        code, out = _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "complete")
+        assert code == 0
+        assert "auto-closed" in out
+
+    def test_close_writes_log_file(self, repo: Path):
+        self._advance_to_check(repo, verify_cmd="echo 'all good'")
+        _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "complete")
+        log = repo / "phases/phase-1-gate-test/verify-output.log"
+        assert log.exists()
+        assert "all good" in log.read_text()
+
+    def test_close_log_path_in_failure_output(self, repo: Path):
+        self._advance_to_check(repo, verify_cmd="exit 1")
+        code, out = _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "complete")
+        assert code == 1
+        assert "verify-output.log" in out
+
+    def test_close_failure_shows_tail_only(self, repo: Path):
+        # Generate 200 lines, then fail — agent should only see last 30
+        cmd = "for i in $(seq 1 200); do echo \"line-$i\"; done && exit 1"
+        self._advance_to_check(repo, verify_cmd=cmd)
+        code, out = _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "complete")
+        assert code == 1
+        assert "line-200" in out  # last line present
+        assert "line-1\n" not in out  # early lines not in agent output
+        # but full output is in the log
+        log = repo / "phases/phase-1-gate-test/verify-output.log"
+        log_text = log.read_text()
+        assert "line-1\n" in log_text
+        assert "line-200" in log_text
+
+    def test_close_blocked_when_verify_stalls(self, repo: Path):
+        # Use a very short idle timeout for testing
+        import unittest.mock
+        cmd = "echo start && sleep 999"
+        self._advance_to_check(repo, verify_cmd=cmd)
+        import pw_gates
+        with unittest.mock.patch.object(pw_gates, "VERIFY_IDLE_TIMEOUT", 2):
+            code, out = _run(repo, "set-step-status", "--phase", "1",
+                             "--step", "check", "--status", "complete")
+        assert code == 1
+        assert "stalled" in out
+
+
+# ---------------------------------------------------------------------------
+# Hardened gates
+# ---------------------------------------------------------------------------
+
+class TestHardenedGates:
+    """Tests for gates enforced by pw.py (Groups A-E)."""
+
+    # --- Group A: Artifact existence ---
+
+    def test_complete_step_blocked_without_artifact(self, repo: Path):
+        _add_phase(repo)
+        _run(repo, "set-step-status", "--phase", "24", "--step", "ideas", "--status", "in_progress")
+        code, out = _run(repo, "set-step-status", "--phase", "24", "--step", "ideas", "--status", "complete")
+        assert code == 1
+        assert "BLOCKED" in out
+        assert "IDEAS.md" in out
+        assert "Action:" in out
+
+    def test_complete_step_allowed_with_artifact(self, repo: Path):
+        _add_phase(repo)
+        code, _ = _complete_step(repo, 24, "ideas")
+        assert code == 0
+
+    def test_build_and_check_skip_artifact_check(self, repo: Path):
+        """build and check have no single artifact — should not require one."""
+        _add_phase(repo, size="small")
+        for step in ["brd", "spec", "plan"]:
+            _complete_step(repo, 24, step)
+        # build has no artifact file requirement
+        _run(repo, "set-step-status", "--phase", "24", "--step", "build", "--status", "in_progress")
+        code, _ = _run(repo, "set-step-status", "--phase", "24", "--step", "build", "--status", "complete")
+        assert code == 0
+
+    # --- Group B: Traceability auto-check ---
+
+    def test_traceability_auto_checked_on_spec_complete(self, repo: Path):
+        """Completing spec checks BRD→SPEC traceability."""
+        _add_phase(repo, size="small")
+        _complete_step(repo, 24, "brd")
+        # Create SPEC.md but without FC IDs from BRD
+        pdir = repo / "phases/phase-24-search"
+        brd = pdir / "BRD.md"
+        brd.write_text("# BRD\n## FC-001\nSome feature\n## FC-002\nAnother\n")
+        spec = pdir / "SPEC.md"
+        spec.write_text("# SPEC\nNo FC references here.\n")
+        _run(repo, "set-step-status", "--phase", "24", "--step", "spec", "--status", "in_progress")
+        code, out = _run(repo, "set-step-status", "--phase", "24", "--step", "spec", "--status", "complete")
+        assert code == 1
+        assert "BLOCKED" in out
+        assert "Traceability" in out
+        assert "FC-001" in out
+
+    def test_traceability_skipped_when_prior_step_skipped(self, repo: Path):
+        """Small phase: ideas is skipped, so ideas→brd traceability is skipped."""
+        _add_phase(repo, size="small")
+        code, _ = _complete_step(repo, 24, "brd")
+        assert code == 0  # no traceability check since ideas was skipped
+
+    # --- Group C: Dependency check before BUILD ---
+
+    def test_build_blocked_on_unmet_deps(self, repo: Path):
+        _add_phase(repo, 1, "First")
+        _run(repo, "add-phase", "--number", "2", "--title", "Second",
+             "--depends-on", "1", "--size", "small")
+        for step in ["brd", "spec", "plan"]:
+            _complete_step(repo, 2, step, "Second")
+        code, out = _run(repo, "set-step-status", "--phase", "2", "--step", "build", "--status", "in_progress")
+        assert code == 1
+        assert "BLOCKED" in out
+        assert "Unmet dependencies" in out
+
+    # --- Group D: Config validation ---
+
+    def test_config_validation_blocks_default_name(self, repo: Path):
+        (repo / "pew.yaml").write_text(yaml.dump({"project": {"name": "My Project"}}))
+        _add_phase(repo)
+        code, out = _run(repo, "set-step-status", "--phase", "24", "--step", "ideas", "--status", "in_progress")
+        assert code == 1
+        assert "BLOCKED" in out
+        assert "pew-init" in out
+
+    # --- Group E: Mode-aware approval gates ---
+
+    def test_build_approval_gate_returns_2(self, repo: Path):
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "project": {"name": "GateProject"},
+            "approval_gates": {"before_build": True, "before_close": True},
+        }))
+        _add_phase(repo, size="small")
+        for step in ["brd", "spec", "plan"]:
+            _complete_step(repo, 24, step)
+        code, out = _run(repo, "set-step-status", "--phase", "24", "--step", "build", "--status", "in_progress")
+        assert code == 2
+        assert "APPROVAL REQUIRED" in out
+        assert "--force" in out
+
+    def test_build_approval_gate_skipped_autopilot(self, repo: Path):
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "project": {"name": "GateProject"},
+            "approval_gates": {"before_build": True, "before_close": False},
+        }))
+        _run(repo, "add-phase", "--number", "24", "--title", "Search",
+             "--tags", "frontend,backend", "--size", "small", "--mode", "autopilot")
+        for step in ["brd", "spec", "plan"]:
+            _complete_step(repo, 24, step)
+        code, _ = _run(repo, "set-step-status", "--phase", "24", "--step", "build", "--status", "in_progress")
+        assert code == 0
+
+    def test_build_approval_gate_skipped_config_off(self, repo: Path):
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "project": {"name": "GateProject"},
+            "approval_gates": {"before_build": False, "before_close": True},
+        }))
+        _add_phase(repo, size="small")
+        for step in ["brd", "spec", "plan"]:
+            _complete_step(repo, 24, step)
+        code, _ = _run(repo, "set-step-status", "--phase", "24", "--step", "build", "--status", "in_progress")
+        assert code == 0
+
+    def test_close_approval_gate_returns_2(self, repo: Path):
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "project": {"name": "GateProject"},
+            "approval_gates": {"before_build": False, "before_close": True},
+        }))
+        _add_phase(repo, size="small")
+        for step in ["brd", "spec", "plan", "build"]:
+            _complete_step(repo, 24, step)
+        _run(repo, "set-step-status", "--phase", "24", "--step", "check", "--status", "in_progress")
+        code, out = _run(repo, "set-step-status", "--phase", "24", "--step", "check", "--status", "complete")
+        assert code == 2
+        assert "APPROVAL REQUIRED" in out
+
+    def test_close_forced_after_approval(self, repo: Path):
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "project": {"name": "GateProject"},
+            "approval_gates": {"before_build": False, "before_close": True},
+        }))
+        _add_phase(repo, size="small")
+        for step in ["brd", "spec", "plan", "build"]:
+            _complete_step(repo, 24, step)
+        _run(repo, "set-step-status", "--phase", "24", "--step", "check", "--status", "in_progress")
+        # First attempt returns 2
+        code, _ = _run(repo, "set-step-status", "--phase", "24", "--step", "check", "--status", "complete")
+        assert code == 2
+        # With --force, proceeds
+        code, out = _run(repo, "set-step-status", "--phase", "24", "--step", "check", "--status", "complete", "--force")
+        assert code == 0
+        assert "auto-closed" in out
+
+    def test_set_mode(self, repo: Path):
+        _add_phase(repo)
+        code, out = _run(repo, "set-mode", "--phase", "24", "--mode", "autopilot")
+        assert code == 0
+        data = pw.load_tracker(repo)
+        assert data["phases"][0]["mode"] == "autopilot"
+
+    def test_add_phase_with_mode(self, repo: Path):
+        _run(repo, "add-phase", "--number", "1", "--title", "Auto Phase", "--mode", "autopilot")
+        data = pw.load_tracker(repo)
+        assert data["phases"][0]["mode"] == "autopilot"
+
+    def test_force_close_skips_reverify(self, repo: Path):
+        """After approval gate (exit 2), --force should not re-run verification."""
+        (repo / "pew.yaml").write_text(yaml.dump({
+            "project": {"name": "GateProject"},
+            "commands": {"verify": "echo VERIFY_RAN"},
+            "approval_gates": {"before_build": False, "before_close": True},
+        }))
+        _add_phase(repo, size="small")
+        for step in ["brd", "spec", "plan", "build"]:
+            _complete_step(repo, 24, step)
+        _run(repo, "set-step-status", "--phase", "24", "--step", "check", "--status", "in_progress")
+        # First attempt: verify runs, then approval gate fires
+        code, out = _run(repo, "set-step-status", "--phase", "24", "--step", "check", "--status", "complete")
+        assert code == 2
+        assert "VERIFY_RAN" not in out or "APPROVAL REQUIRED" in out
+        # Force: should skip re-verification
+        code, out = _run(repo, "set-step-status", "--phase", "24", "--step", "check", "--status", "complete", "--force")
+        assert code == 0
+        assert "skipping re-run" in out
+
+    def test_mode_in_analyze_phase_json(self, repo: Path):
+        _run(repo, "add-phase", "--number", "1", "--title", "Test", "--mode", "autopilot")
+        code, out = _run(repo, "analyze-phase", "--phase", "1", "--json")
+        assert code == 0
+        result = json.loads(out)
+        assert result["mode"] == "autopilot"
+
+    def test_mode_defaults_in_load_tracker(self, tmp_path: Path):
+        """Phases without mode field in YAML get 'manual' default."""
+        (tmp_path / "phases").mkdir(parents=True)
+        tracker = tmp_path / "phases/phase-tracker.yaml"
+        tracker.write_text(yaml.dump({"phases": [{"number": 1, "title": "Old", "status": "not_started"}]}))
+        data = pw.load_tracker(tmp_path)
+        assert data["phases"][0]["mode"] == "manual"
 
 
 # ---------------------------------------------------------------------------
@@ -1344,7 +1637,10 @@ class TestVibeMode:
         # Start build first (so phase is initialized)
         _run(repo, "set-step-status", "--phase", "24",
              "--step", "build", "--status", "in_progress")
-        # Now retroactively complete brd (was skipped)
+        # Synthesizer creates BRD.md, then orchestrator marks complete
+        pdir = repo / "phases/phase-24-search"
+        pdir.mkdir(parents=True, exist_ok=True)
+        (pdir / "BRD.md").write_text("# BRD\nSynthesized.\n")
         code, _ = _run(repo, "set-step-status", "--phase", "24",
                         "--step", "brd", "--status", "complete")
         assert code == 0

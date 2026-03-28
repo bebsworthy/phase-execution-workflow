@@ -24,8 +24,7 @@ Config fields used throughout this skill:
 - `config.paths.audit_test` — test audit output directory (default: `phases/audit/test`)
 - `config.paths.audit_ux` — UX audit output directory (default: `phases/audit/ux`)
 - `config.paths.guidelines` — development playbooks read during BUILD
-- `config.commands.verify` — full CI verification command
-- `config.commands.e2e` — frontend e2e test command
+- `config.commands.verify` — full CI verification command (should include lint, typecheck, unit tests, and e2e)
 - `config.stack.description` — tech stack summary for UX agents
 - `config.stack.frontend_src` — frontend source directory (e.g., `src/`); activates `council-frontend` when set
 - `config.stack.component_paths` — glob patterns for UI components (used by UX designer agent)
@@ -36,8 +35,8 @@ Config fields used throughout this skill:
 - `config.council.max_findings_per_expert` — cap per expert (default: 15)
 - `config.council.skip_tags` — phase tags that skip council review (e.g., `docs-only`)
 - `config.council.experts` — optional per-domain config (reference docs, custom agent files, file patterns)
-- `config.approval_gates.before_build` — require explicit user approval before BUILD (default: true)
-- `config.approval_gates.before_close` — require explicit user approval before CLOSE (default: true)
+- `config.approval_gates.before_build` — require explicit user approval before BUILD (default: true; skipped when phase `mode` is `autopilot`)
+- `config.approval_gates.before_close` — require explicit user approval before CLOSE (default: true; skipped when phase `mode` is `autopilot`)
 - `config.product_review.enabled` — whether build-product-reviewer runs during CHECK (default: true for frontend phases)
 - `config.product_review.app_url` — URL of running app for browser testing (default: `http://localhost:5173`)
 - `config.product_review.start_command` — command to start the app if not reachable (e.g., `make dev-up`)
@@ -89,7 +88,7 @@ Phases can optionally include a `brief_file` — a path to an external document 
   brief_file: plans/read-tracking-plan.md
 ```
 
-When a phase has `brief_file`, pass the path to every step agent (IDEAS, BRD, RESEARCH) alongside the brief text. Agents read the file themselves — never embed its content in spawn prompts.
+When a phase has `brief_file`, pass the path to every step agent (IDEAS, BRD, RESEARCH, BUILD) alongside the brief text. Agents read the file themselves — never embed its content in spawn prompts.
 
 Add via CLI: `pw.sh add-phase --number 5 --title "Read/Unread" --brief-file plans/read-tracking-plan.md`
 
@@ -97,7 +96,7 @@ Or add `brief_file` directly to the tracker YAML under the phase.
 
 ### Phase Sizing
 
-Phases have a `size` field (`small | medium | large | audit`, default: `large`) that controls which steps are mandatory:
+Phases have a `size` field (`small | medium | large | audit | vibe`, default: `large`) that controls which steps are mandatory:
 
 | Size | Steps Run | Steps Skipped | Use When |
 | --- | --- | --- | --- |
@@ -105,6 +104,7 @@ Phases have a `size` field (`small | medium | large | audit`, default: `large`) 
 | **medium** | BRD → RESEARCH → SPEC → PLAN → BUILD → CHECK | IDEAS | Well-understood features that don't need market research |
 | **small** | BRD → SPEC → PLAN → BUILD → CHECK | IDEAS, RESEARCH | Bug fixes, small changes, well-scoped tasks |
 | **audit** | BRD → SPEC → PLAN → BUILD → CHECK | IDEAS, RESEARCH | Phases from audit findings — agents derive from AUDIT-BRIEF.md |
+| **vibe** | BUILD → CHECK | IDEAS, BRD, RESEARCH, SPEC, PLAN | Managed by /pew-vibe — build first, synthesize docs post-hoc |
 
 Skipped steps are pre-set to `skipped` status when the phase is created via `pw.sh add-phase --size <size>`. The `analyze-phase` command respects skipped steps and resumes from the first non-skipped incomplete step.
 
@@ -124,7 +124,7 @@ Run `pw.sh analyze-phase --phase <N> --json` and resume from the first incomplet
 
 ### Dispatch Loop
 
-For each step, the orchestrator: sets status to `in_progress`, spawns the step agent(s), validates output, runs gates, sets status to `complete`, and commits. The orchestrator **never reads code or writes artifacts** — agents do that.
+For each step, the orchestrator: sets status to `in_progress` (pw.py enforces dependency/approval gates), spawns the step agent(s), commits, then sets status to `complete` (pw.py enforces artifact existence + traceability). The orchestrator **never reads code or writes artifacts** — agents do that.
 
 Each agent receives: phase context (number, title, tags, brief, brief_file if set), file paths to read, conventions file path, and relevant config fields. Pass template paths as `${CLAUDE_PLUGIN_ROOT}/templates/<STEP>.template.md`.
 
@@ -138,10 +138,9 @@ Each agent receives: phase context (number, title, tags, brief, brief_file if se
 1. `pw.sh set-step-status --phase N --step ideas --status in_progress`
 2. Unless `skip research` flag: spawn `build-feature-benchmarker` with phase brief, title, tags, list of existing files in `{config.paths.research}/`, research log path (`{config.paths.research}/research-log.md`). Config (competitors, research path) is auto-injected via hook. Wait for completion. Note output file path.
 3. Spawn `build-ideas-writer` with: phase brief, brief_file path (if set), title, tags, refs paths, previous RETRO.md path (if exists), benchmark doc paths (from step 2), conventions file path, template path. Wait for completion.
-4. **Validate**: `{phase-dir}/IDEAS.md` exists and is non-empty
-5. If agent reported open questions: present them via `AskUserQuestion`, then re-spawn agent with answers
-6. Atomic commit
-7. `pw.sh set-step-status --phase N --step ideas --status complete`
+4. If agent reported open questions: in autopilot mode, proceed with the recommended option and record the question + chosen answer. Pass all auto-resolved answers to the spec-writer (Step 4) for inclusion as ADR entries in SPEC.md. Otherwise, present via `AskUserQuestion`, then re-spawn agent with answers.
+5. Atomic commit
+6. `pw.sh set-step-status --phase N --step ideas --status complete` — **pw.py auto-checks**: IDEAS.md exists and is non-empty
 
 #### Step 2: BRD
 
@@ -151,11 +150,9 @@ Each agent receives: phase context (number, title, tags, brief, brief_file if se
 
 1. `pw.sh set-step-status --phase N --step brd --status in_progress`
 2. Spawn `build-brd-writer` with: IDEAS.md path (only if IDEAS step was not skipped), brief_file path (if set), refs paths, conventions file path, phase context, template path. Wait for completion.
-3. **Validate**: `{phase-dir}/BRD.md` exists and is non-empty
-4. If agent reported open questions: present via `AskUserQuestion`, re-spawn with answers
-5. **Gate**: `pw.sh verify-traceability --phase N --from ideas --to brd` — skip this gate if IDEAS step was skipped (small phases)
-6. Atomic commit
-7. `pw.sh set-step-status --phase N --step brd --status complete`
+3. If agent reported open questions: in autopilot mode, proceed with the recommended option and record the question + chosen answer. Pass all auto-resolved answers to the spec-writer (Step 4) for inclusion as ADR entries in SPEC.md. Otherwise, present via `AskUserQuestion`, re-spawn with answers.
+4. Atomic commit
+5. `pw.sh set-step-status --phase N --step brd --status complete` — **pw.py auto-checks**: BRD.md exists, ideas→brd traceability (skipped if IDEAS was skipped)
 
 #### Step 3: RESEARCH
 
@@ -170,10 +167,9 @@ Each agent receives: phase context (number, title, tags, brief, brief_file if se
    a. Spawn `build-ux-researcher` with BRD.md path, phase context, config (stack, research path). Wait for completion. Note output file path.
    b. Spawn `build-ux-designer` with BRD.md path, UX research output path, phase context (number, title, tags). Config (stack, component paths) is auto-injected via hook. Wait for completion.
 3. Spawn `build-research-writer` with: BRD.md path, refs paths, UX research doc paths (if any), DESIGN.md path (if exists), architecture-reference.md path, conventions file path, phase tags, template path. Wait for completion.
-4. **Validate**: `{phase-dir}/RESEARCH.md` exists and is non-empty
-5. If agent reported open questions: present via `AskUserQuestion`, re-spawn with answers
-6. Atomic commit
-7. `pw.sh set-step-status --phase N --step research --status complete`
+4. If agent reported open questions: in autopilot mode, proceed with the recommended option and record the question + chosen answer. Pass all auto-resolved answers to the spec-writer (Step 4) for inclusion as ADR entries in SPEC.md. Otherwise, present via `AskUserQuestion`, re-spawn with answers.
+5. Atomic commit
+6. `pw.sh set-step-status --phase N --step research --status complete` — **pw.py auto-checks**: RESEARCH.md exists
 
 #### Step 4: SPEC
 
@@ -183,10 +179,8 @@ Each agent receives: phase context (number, title, tags, brief, brief_file if se
 
 1. `pw.sh set-step-status --phase N --step spec --status in_progress`
 2. Spawn `build-spec-writer` with: BRD.md path, RESEARCH.md path, DESIGN.md path (if exists), conventions file path, phase context, template path. Wait for completion.
-3. **Validate**: `{phase-dir}/SPEC.md` exists and is non-empty
-4. **Gate**: `pw.sh verify-traceability --phase N --from brd --to spec`
-5. Atomic commit
-6. `pw.sh set-step-status --phase N --step spec --status complete`
+3. Atomic commit
+4. `pw.sh set-step-status --phase N --step spec --status complete` — **pw.py auto-checks**: SPEC.md exists, brd→spec traceability
 
 #### Step 5: PLAN
 
@@ -196,32 +190,29 @@ Each agent receives: phase context (number, title, tags, brief, brief_file if se
 
 1. `pw.sh set-step-status --phase N --step plan --status in_progress`
 2. Spawn `build-plan-writer` with: SPEC.md path, conventions file path, phase context, template path. Wait for completion.
-3. **Validate**: `{phase-dir}/PLAN.md` exists and is non-empty
-4. **Gate**: `pw.sh verify-traceability --phase N --from spec --to plan`
-5. Atomic commit
-6. `pw.sh set-step-status --phase N --step plan --status complete`
-7. If `plan phase` mode: **STOP HERE**.
+3. Atomic commit
+4. `pw.sh set-step-status --phase N --step plan --status complete` — **pw.py auto-checks**: PLAN.md exists, spec→plan traceability
+5. If `plan phase` mode: **STOP HERE**.
 
 #### Step 6: BUILD
 
-1. **Approval gate**: If `config.approval_gates.before_build` is true, present gate summary via `AskUserQuestion`: phase title, completed artifacts, key SPEC decisions, task count from PLAN. Options: "Approve BUILD" / "Request changes". Fires in both manual and auto mode.
-2. **Pre-gate**: `pw.sh check-dependencies --phase N` (full, not --through)
-3. `pw.sh set-step-status --phase N --step build --status in_progress`
-4. Read PLAN.md **task list only** (task IDs, descriptions, agent assignments, dependencies, linked T-nnn). Do NOT read playbooks, profiles, or source code.
-5. Resolve review profiles: `pw.sh resolve-profiles --profiles-dir ${CLAUDE_PLUGIN_ROOT}/review-profiles/ --files <task-target-files> --summary`
-6. For each task in dependency order (tracks with no cross-track dependencies may execute in parallel):
+1. `pw.sh set-step-status --phase N --step build --status in_progress` — **pw.py auto-checks**: dependencies satisfied, approval gate (returns exit 2 if approval required). If exit 2: present approval gate via `AskUserQuestion` ("Approve BUILD" / "Request changes"), then re-run with `--force`.
+2. Read PLAN.md **task list only** (task IDs, descriptions, agent assignments, dependencies, linked T-nnn). Do NOT read playbooks, profiles, or source code.
+3. Resolve review profiles: `pw.sh resolve-profiles --profiles-dir ${CLAUDE_PLUGIN_ROOT}/review-profiles/ --files <task-target-files> --summary`
+4. For each task in dependency order (tracks with no cross-track dependencies may execute in parallel):
    - Spawn the assigned agent (`build-frontend-developer` or `build-backend-developer`) with:
      - Task description and acceptance criteria
      - Linked T-nnn test entries from SPEC
-     - Resolved review profile summaries (from step 5)
+     - Resolved review profile summaries (from step 3)
      - Playbook directory path: `{config.paths.guidelines}/`
      - Phase refs paths
+     - Brief file path (if set — especially important for audit phases where AUDIT-BRIEF.md is primary context)
      - Verify commands: `{config.commands.verify}`
    - Wait for completion
    - Update PLAN.md task status (`done` / `descoped`)
-7. **Architecture reference check**: If agent reports new modules/services/patterns created, update `{config.paths.research}/architecture-reference.md`
-8. Atomic commits per implementation slice
-9. `pw.sh set-step-status --phase N --step build --status complete`
+5. **Architecture reference check**: If agent reports new modules/services/patterns created, update `{config.paths.research}/architecture-reference.md`
+6. Atomic commits per implementation slice
+7. `pw.sh set-step-status --phase N --step build --status complete`
 
 #### Step 7: CHECK + CLOSE
 
@@ -263,7 +254,7 @@ This step stays with the orchestrator — it is coordination work (dispatching e
 
 **Step 7b — Verify**:
 
-- Run `{config.commands.verify}` (lint + typecheck + test:all); for frontend phases also run `{config.commands.e2e}`
+- **Note**: Do NOT run `{config.commands.verify}` here — `pw.sh set-step-status --step check --status complete` runs it automatically on close and blocks if tests fail. Step 7b focuses on alignment and code quality, not re-running the test suite.
 - Code quality check: review test files for empty assertions, `.toBeDefined()`-only tests, mocking the subject under test
 - Spawn `build-alignment-checker` with: SPEC.md path, BRD.md path, phase-diff file list, conventions file path (if configured). Verify each FC-nnn has implementation, each T-nnn has test.
 - If phase has `frontend` tag and `config.product_review.enabled` is true: spawn `build-product-reviewer` with BRD.md path, `config.product_review.app_url`, `config.product_review.start_command`. If browser tools unavailable, skip with warning.
@@ -277,18 +268,19 @@ This step stays with the orchestrator — it is coordination work (dispatching e
   - `fix`: make the change, atomic commit
   - `descope`: update SPEC.md/PLAN.md with rationale
   - `defer`: add carry-forward note to RETRO.md
+- **Autopilot fix policy**: P1 → auto-fix. P2 → auto-fix on first pass, defer on subsequent cycles. P3 → auto-defer immediately. If P1 unresolved after 3 cycles → **hard stop autopilot** and report.
 - Update COUNCIL-REVIEW.md — mark each finding with disposition (`fixed`/`deferred`/`descoped`) + commit hash or rationale
 - After all fixes, restart from 7b (council review does NOT re-run). Max 3 fix cycles before escalating.
 
 **Step 7d — Close** (all P1 checks green):
 
-- **Approval gate**: If `config.approval_gates.before_close` is true, present close summary via `AskUserQuestion`: verification results, COUNCIL-REVIEW.md link, deferred items. Options: "Approve CLOSE" / "Request changes".
+- **Note**: The approval gate and verification are handled by pw.py (see below).
 - Finalize COUNCIL-REVIEW.md — summary header with counts: total, fixed, deferred, descoped
 - Record verification evidence in PLAN.md
 - Close every test ID with `passed|failed|descoped` + evidence
 - If recurring patterns, offer to add to conventions file
 - Optional: create RETRO.md (3-5 went well, 3-5 improve, carry-forwards, max 30 lines)
-- `pw.sh set-step-status --phase N --step check --status complete` (auto-closes phase)
+- `pw.sh set-step-status --phase N --step check --status complete` — **pw.py auto-checks**: runs `config.commands.verify` (refuses to close if tests fail), then checks approval gate (returns exit 2 if approval required). If exit 2: present close approval gate via `AskUserQuestion` ("Approve CLOSE" / "Request changes"), then re-run with `--force`.
 
 **CHECK constraints:**
 
@@ -297,7 +289,27 @@ This step stays with the orchestrator — it is coordination work (dispatching e
 - Do NOT mark tests as passing without running them
 - Do NOT skip dispatching a council expert because its domain seems irrelevant — let the expert decide
 - Do NOT include code snippets in merged council findings
-- Do NOT auto-fix council findings without user review
+- Do NOT auto-fix council findings without user review (exception: autopilot mode auto-fixes P1/P2 findings, defers P3)
+
+### Autopilot Phase Loop
+
+After step 7d completes successfully for the current phase (autopilot mode only):
+
+1. Run `pw.sh list-phases --json`. Filter to phases where status is not `complete` and not `skipped`. Sort by phase number ascending.
+2. For each candidate phase, run `pw.sh check-dependencies --phase N`.
+3. The first candidate with satisfied dependencies becomes the next phase. If no candidates have satisfied dependencies, skip to step 6.
+4. Run `pw.sh analyze-phase --phase N --json` and begin at the first incomplete step. Continue the full step dispatch loop.
+5. After closing the phase, repeat from step 1. If `--limit` was specified and reached, proceed to step 6.
+6. **Produce autopilot summary report**:
+   ```
+   Autopilot complete — N phases processed
+
+   Phase X: <title> — closed ✓ (deferred: N items)
+   Phase Y: <title> — STOPPED (P1 unresolved after 3 fix cycles)
+   Phase Z: <title> — skipped (unmet dependencies: [A, B])
+
+   Total deferred items: N (see RETRO.md per phase)
+   ```
 
 ---
 
@@ -315,21 +327,24 @@ This step stays with the orchestrator — it is coordination work (dispatching e
 | `check phase <N>`                         | Execute Step 7 check portion                                              |
 | `status phase <N>`                        | Run analyze-phase, summarize progress                                     |
 | `close phase <N>`                         | Execute Step 7 close portion, set complete                                |
-| `start phase <N> auto`                    | run all steps in order, enforce gates (auto-inits on first step)          |
-| `continue phase <N> auto`                 | analyze → resume from first incomplete, run to completion                 |
+| `start phase <N> auto`                    | `pw.sh set-mode --phase N --mode auto`, then run all steps               |
+| `continue phase <N> auto`                 | `pw.sh set-mode --phase N --mode auto`, then resume from first incomplete |
 | `continue phase <N>`                      | analyze → execute next incomplete step only                               |
 | `plan phase <N>`                          | Run IDEAS through PLAN only (Steps 1-5), stop before BUILD               |
-| `plan phase <N> auto`                     | Same as above in auto mode (gates still fire)                             |
+| `plan phase <N> auto`                     | `pw.sh set-mode --phase N --mode auto`, then run Steps 1-5               |
 | `check phase <N> skip council`            | Execute Step 7 without council review (skip 7a, start at 7b)              |
 | `start ideas for phase <N> skip research` | Execute Step 1 without build-feature-benchmarker (internal/technical phases)    |
+| `start autopilot [from phase <N>]`        | `pw.sh set-mode --phase N --mode autopilot`, then run all eligible phases      |
+| `start autopilot --limit <N>`             | Same with phase limit                                                          |
 
 ### Script Commands Reference
 
 ```
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh <command>
-  set-step-status --phase N --step S --status S   # auto-inits phase, auto-closes on check complete
+  set-step-status --phase N --step S --status S [--force]  # enforces all gates; exit 1 = hard fail, exit 2 = approval needed (re-run with --force)
+  set-mode --phase N --mode manual|auto|autopilot  # set phase execution mode (controls approval gate behavior)
   analyze-phase --phase N [--json]
-  add-phase --number N --title T [--brief "..."] [--brief-file PATH] [--depends-on X,Y] [--tags a,b] [--size small|medium|large]
+  add-phase --number N --title T [--brief "..."] [--brief-file PATH] [--depends-on X,Y] [--tags a,b] [--size small|medium|large|audit|vibe]
   list-phases [--status S] [--json]
   next-phase-number                              # output next available integer phase number
   verify-traceability --phase N --from S --to S    # exit 1 if missing IDs found
@@ -354,7 +369,22 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh <command>
 4. **Stop condition** — approval gates always fire even in auto mode. Unresolved open questions with no good default also stop. After gate approval, resume auto mode execution from the next step without requiring a separate "continue" command.
 5. **Default-by-best-practice** — proceed + log as ADR in SPEC.md
 6. **Anti-drift lock** — before build step, only edit phase artifacts
-7. **Pre-build** — run `pw.sh check-dependencies --phase N` to verify prerequisites
+7. **Pre-build** — pw.py auto-checks dependencies when starting build (no manual call needed)
+
+### Autopilot Mode Rules
+
+Autopilot mode inherits all auto mode rules (strict step ordering, step-completion gates, sub-agent delegation, anti-drift lock, pre-build dependency check) with these overrides:
+
+1. **Approval gates skipped** — both `before_build` and `before_close` gates are skipped entirely. Log: "Autopilot: skipping BUILD/CLOSE approval gate for phase N."
+2. **Open questions auto-resolved** — do not call `AskUserQuestion`. Always proceed with the recommended (first) option. Record each auto-resolved question and chosen answer. Pass all to the spec-writer (Step 4) for inclusion as ADR entries in SPEC.md.
+3. **Fix cycle auto-policy**:
+   - P1: auto-fix (up to 3 cycles). If still unresolved after 3 cycles → **hard stop autopilot**, report to user.
+   - P2: auto-fix on first pass, defer with rationale on subsequent cycles.
+   - P3: auto-defer immediately with carry-forward note.
+4. **Council findings** — auto-fix P1/P2 findings, defer P3. This overrides the "Do NOT auto-fix council findings without user review" constraint.
+5. **Multi-phase loop** — after closing a phase, find and begin the next eligible phase (see "Autopilot Phase Loop" below).
+6. **Hard stop conditions** — P1 unresolved after 3 fix cycles, or no eligible phases remain, or phase limit reached.
+7. **Summary report** — on completion (or hard stop), produce a summary: phases processed, outcome per phase (closed/stopped), deferred items, skipped phases with reason.
 
 ### Concurrent Phase Work
 
@@ -373,9 +403,18 @@ This means you can:
 
 ### Quality Gates
 
-- **Traceability gate**: run `pw.sh verify-traceability` before advancing between steps (IDEAS→BRD, BRD→SPEC, SPEC→PLAN)
-- **Code quality gate**: `{config.commands.verify}` must pass before phase close; also check for fake tests (empty assertions, toBeDefined-only, mocked subjects)
-- **Alignment gate**: at verification, spawn build-alignment-checker to verify FC→implementation and T→test coverage; reports aligned/misaligned/missing
+All gates below are **enforced by pw.py** — they cannot be bypassed by the orchestrator.
+
+- **Artifact gate**: `set-step-status --status complete` refuses if the step's artifact file is missing or empty
+- **Traceability gate**: `set-step-status --status complete` auto-runs traceability checks (IDEAS→BRD, BRD→SPEC, SPEC→PLAN) — skipped if prior step was skipped
+- **Dependency gate**: `set-step-status --step build --status in_progress` auto-checks phase dependencies
+- **Approval gate**: `set-step-status` returns exit 2 when approval is required (based on phase `mode` and config); re-run with `--force` after user approves
+- **Verification gate**: `set-step-status --step check --status complete` runs `config.commands.verify` and blocks on failure
+- **Config gate**: `set-step-status` refuses if `project.name` is still the default — run `/pew-init` first
+
+The orchestrator is still responsible for:
+- **Code quality check**: review test files for empty assertions, `.toBeDefined()`-only tests, mocking the subject under test (Step 7b)
+- **Alignment gate**: spawn build-alignment-checker to verify FC→implementation and T→test coverage (Step 7b)
 
 ### Severity Classification
 
@@ -440,12 +479,15 @@ Never pass file content inline — agents read files themselves. Never read sour
 
 A phase is `complete` when:
 
-1. All 5 artifacts complete and committed
-2. Traceability verified across steps
+1. All required artifacts complete and committed:
+   - **large**: IDEAS.md, BRD.md, RESEARCH.md, SPEC.md, PLAN.md, COUNCIL-REVIEW.md
+   - **medium**: BRD.md, RESEARCH.md, SPEC.md, PLAN.md, COUNCIL-REVIEW.md
+   - **small / audit**: BRD.md, SPEC.md, PLAN.md, COUNCIL-REVIEW.md
+   - **vibe**: BRD.md, SPEC.md, COUNCIL-REVIEW.md (synthesized post-hoc)
+2. Traceability verified across non-skipped steps
 3. All tests implemented or explicitly descoped
-4. Verification evidence recorded
+4. Verification passed (`pw.sh set-step-status --step check --status complete` enforces this)
 5. Documentation drift reconciled
-6. Quality gate passed (lint, typecheck, tests)
-7. Alignment check passed
-8. No P1 issues open
-9. Tracker status set to `complete`
+6. Alignment check passed
+7. No P1 issues open
+8. Tracker status set to `complete`
