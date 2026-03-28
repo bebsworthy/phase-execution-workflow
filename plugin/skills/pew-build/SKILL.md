@@ -14,35 +14,15 @@ Project-specific settings live in `pew.yaml` at the repo root. **Before executin
 
 If `pew.yaml` exists, load the config by running `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config`. Config is **auto-injected into every PEW agent** via the `SubagentStart` hook defined in `plugin.json`. The hook runs `pw.sh dump-config --scope <role>` and injects the result as `additionalContext` — agents see it in their context as `config.*` fields. You do NOT need to manually embed config in spawn prompts.
 
-Config fields used throughout this skill:
+Config fields the orchestrator references directly (agents receive the full scoped config via hook injection — you don't need to know every field):
 
-- `config.project.name` / `config.project.description` — project identity for agent context
-- `config.paths.tracker` — phase tracker YAML (source of truth)
-- `config.paths.plan` — human-readable implementation plan (auto-rendered from YAML)
-- `config.paths.phases` — directory containing phase subdirectories
-- `config.paths.research` — benchmark and UX research output
-- `config.paths.audit_test` — test audit output directory (default: `phases/audit/test`)
-- `config.paths.audit_ux` — UX audit output directory (default: `phases/audit/ux`)
-- `config.paths.guidelines` — development playbooks read during BUILD
-- `config.commands.verify` — full CI verification command (should include lint, typecheck, unit tests, and e2e)
-- `config.stack.description` — tech stack summary for UX agents
-- `config.stack.frontend_src` — frontend source directory (e.g., `src/`); activates `council-frontend` when set
-- `config.stack.component_paths` — glob patterns for UI components (used by UX designer agent)
-- `config.stack.install_commands` — commands for adding packages/components (e.g., `{add_package: "npm install"}`)
-- `config.competitors` — competitor list for build-feature-benchmarker
-- `config.conventions_file` — path to conventions doc (if set)
-- `config.council.enabled` — whether council review runs during CHECK (default: true)
-- `config.council.max_findings_per_expert` — cap per expert (default: 15)
-- `config.council.skip_tags` — phase tags that skip council review (e.g., `docs-only`)
-- `config.council.experts` — optional per-domain config (reference docs, custom agent files, file patterns)
-- `config.approval_gates.before_build` — require explicit user approval before BUILD (default: true; skipped when phase `mode` is `autopilot`)
-- `config.approval_gates.before_close` — require explicit user approval before CLOSE (default: true; skipped when phase `mode` is `autopilot`)
-- `config.product_review.enabled` — whether build-product-reviewer runs during CHECK (default: true for frontend phases)
-- `config.product_review.app_url` — URL of running app for browser testing (default: `http://localhost:5173`)
-- `config.product_review.start_command` — command to start the app if not reachable (e.g., `make dev-up`)
-- `config.review_profiles_dir` — directory of composable tech best-practice profiles (default: `${CLAUDE_PLUGIN_ROOT}/review-profiles/`)
-
-**Config merge note:** `pew.yaml` values are deep-merged with defaults. Scalar and object values merge recursively. List/array values (e.g., `component_paths`) are **replaced entirely** — if you override a list in `pew.yaml`, include all desired entries, not just additions.
+- `config.paths.*` — tracker, plan, phases, research, guidelines directories
+- `config.commands.verify` — CI verification command (lint, typecheck, unit, e2e). Run by pw.py on phase close.
+- `config.stack.frontend_src` — if set, activates `council-frontend` and UX research agents
+- `config.conventions_file` — path to conventions doc; pass to every step agent if set
+- `config.council.enabled` / `config.council.skip_tags` — controls whether council review runs in CHECK
+- `config.approval_gates.before_build` / `config.approval_gates.before_close` — approval gate toggles (default: true; skipped when phase `mode` is `autopilot`)
+- `config.product_review.enabled` — whether `build-product-reviewer` runs in CHECK (frontend phases)
 
 ## Core Concepts
 
@@ -58,41 +38,12 @@ Config fields used throughout this skill:
 - **Phase naming**: convert title to kebab-case (e.g., "Phase 24 Advanced Search" → `phase-24-advanced-search`)
 - **Phase refs**: optional list of reference doc paths (relative to repo root) on each phase. Agents read these during IDEAS, BRD, RESEARCH, and BUILD to resolve finding IDs (e.g., `F-001`), user goals (e.g., `J-001`), and other external context cited in the brief.
 
-### Phase References
+### Phase References and Brief File
 
-Phases can include a `refs` list pointing to external research, UX audits, or any docs that provide context for finding IDs in the brief:
+- **`refs`**: list of reference doc paths (relative to repo root). Pass to every step agent so they can resolve finding IDs (F-001, J-001, etc.).
+- **`brief_file`**: path to an external document (plan, AUDIT-BRIEF.md) that agents read as primary context. Pass to every step agent (IDEAS, BRD, RESEARCH, BUILD). Never embed its content in spawn prompts.
 
-```yaml
-- number: 5
-  title: Read/Unread Tracking
-  brief: "Server-side read state tracking (F-001). Serves J-001."
-  refs:
-    - {config.paths.audit_ux}/04-audit.md
-    - {config.paths.audit_ux}/01-user-goals.md
-```
-
-When a phase has refs, pass ref paths to every step agent so they can resolve IDs and understand context.
-
-Add refs via CLI: `pw.sh add-phase --number 5 --title "Read/Unread" --refs "{config.paths.audit_ux}/04-audit.md,{config.paths.audit_ux}/01-user-goals.md"`
-
-Or add them directly to the tracker YAML under the phase's `refs` field.
-
-### Brief File
-
-Phases can optionally include a `brief_file` — a path to an external document (e.g., a plan-mode brainstorm, design doc, or detailed brief) that agents read as primary context alongside the short `brief` text:
-
-```yaml
-- number: 5
-  title: Read/Unread Tracking
-  brief: "Server-side read state tracking"
-  brief_file: plans/read-tracking-plan.md
-```
-
-When a phase has `brief_file`, pass the path to every step agent (IDEAS, BRD, RESEARCH, BUILD) alongside the brief text. Agents read the file themselves — never embed its content in spawn prompts.
-
-Add via CLI: `pw.sh add-phase --number 5 --title "Read/Unread" --brief-file plans/read-tracking-plan.md`
-
-Or add `brief_file` directly to the tracker YAML under the phase.
+Both are set via `pw.sh add-phase --refs "..." --brief-file "..."` or directly in the tracker YAML.
 
 ### Phase Sizing
 
@@ -128,6 +79,8 @@ For each step, the orchestrator: sets status to `in_progress` (pw.py enforces de
 
 Each agent receives: phase context (number, title, tags, brief, brief_file if set), file paths to read, conventions file path, and relevant config fields. Pass template paths as `${CLAUDE_PLUGIN_ROOT}/templates/<STEP>.template.md`.
 
+**Open question protocol** (applies to Steps 1-3): If an agent reports open questions, in autopilot mode proceed with the recommended option and record the question + chosen answer — pass all to the spec-writer (Step 4) for ADR entries in SPEC.md. Otherwise, present via `AskUserQuestion` (see format below) and re-spawn agent with answers.
+
 #### Step 1: IDEAS
 
 | Agent | Input | Output |
@@ -138,7 +91,7 @@ Each agent receives: phase context (number, title, tags, brief, brief_file if se
 1. `pw.sh set-step-status --phase N --step ideas --status in_progress`
 2. Unless `skip research` flag: spawn `build-feature-benchmarker` with phase brief, title, tags, list of existing files in `{config.paths.research}/`, research log path (`{config.paths.research}/research-log.md`). Config (competitors, research path) is auto-injected via hook. Wait for completion. Note output file path.
 3. Spawn `build-ideas-writer` with: phase brief, brief_file path (if set), title, tags, refs paths, previous RETRO.md path (if exists), benchmark doc paths (from step 2), conventions file path, template path. Wait for completion.
-4. If agent reported open questions: in autopilot mode, proceed with the recommended option and record the question + chosen answer. Pass all auto-resolved answers to the spec-writer (Step 4) for inclusion as ADR entries in SPEC.md. Otherwise, present via `AskUserQuestion`, then re-spawn agent with answers.
+4. Handle open questions per protocol above.
 5. Atomic commit
 6. `pw.sh set-step-status --phase N --step ideas --status complete` — **pw.py auto-checks**: IDEAS.md exists and is non-empty
 
@@ -150,7 +103,7 @@ Each agent receives: phase context (number, title, tags, brief, brief_file if se
 
 1. `pw.sh set-step-status --phase N --step brd --status in_progress`
 2. Spawn `build-brd-writer` with: IDEAS.md path (only if IDEAS step was not skipped), brief_file path (if set), refs paths, conventions file path, phase context, template path. Wait for completion.
-3. If agent reported open questions: in autopilot mode, proceed with the recommended option and record the question + chosen answer. Pass all auto-resolved answers to the spec-writer (Step 4) for inclusion as ADR entries in SPEC.md. Otherwise, present via `AskUserQuestion`, re-spawn with answers.
+3. Handle open questions per protocol above.
 4. Atomic commit
 5. `pw.sh set-step-status --phase N --step brd --status complete` — **pw.py auto-checks**: BRD.md exists, ideas→brd traceability (skipped if IDEAS was skipped)
 
@@ -167,7 +120,7 @@ Each agent receives: phase context (number, title, tags, brief, brief_file if se
    a. Spawn `build-ux-researcher` with BRD.md path, phase context, config (stack, research path). Wait for completion. Note output file path.
    b. Spawn `build-ux-designer` with BRD.md path, UX research output path, phase context (number, title, tags). Config (stack, component paths) is auto-injected via hook. Wait for completion.
 3. Spawn `build-research-writer` with: BRD.md path, refs paths, UX research doc paths (if any), DESIGN.md path (if exists), architecture-reference.md path, conventions file path, phase tags, template path. Wait for completion.
-4. If agent reported open questions: in autopilot mode, proceed with the recommended option and record the question + chosen answer. Pass all auto-resolved answers to the spec-writer (Step 4) for inclusion as ADR entries in SPEC.md. Otherwise, present via `AskUserQuestion`, re-spawn with answers.
+4. Handle open questions per protocol above.
 5. Atomic commit
 6. `pw.sh set-step-status --phase N --step research --status complete` — **pw.py auto-checks**: RESEARCH.md exists
 
@@ -382,9 +335,7 @@ Autopilot mode inherits all auto mode rules (strict step ordering, step-completi
    - P2: auto-fix on first pass, defer with rationale on subsequent cycles.
    - P3: auto-defer immediately with carry-forward note.
 4. **Council findings** — auto-fix P1/P2 findings, defer P3. This overrides the "Do NOT auto-fix council findings without user review" constraint.
-5. **Multi-phase loop** — after closing a phase, find and begin the next eligible phase (see "Autopilot Phase Loop" below).
-6. **Hard stop conditions** — P1 unresolved after 3 fix cycles, or no eligible phases remain, or phase limit reached.
-7. **Summary report** — on completion (or hard stop), produce a summary: phases processed, outcome per phase (closed/stopped), deferred items, skipped phases with reason.
+5. **Multi-phase loop** — see "Autopilot Phase Loop" section for full behavior (phase selection, hard stops, summary report).
 
 ### Concurrent Phase Work
 
@@ -403,18 +354,11 @@ This means you can:
 
 ### Quality Gates
 
-All gates below are **enforced by pw.py** — they cannot be bypassed by the orchestrator.
+pw.py enforces artifact, traceability, dependency, approval, verification, and config gates automatically via `set-step-status` (annotated at each step above). The orchestrator cannot bypass them.
 
-- **Artifact gate**: `set-step-status --status complete` refuses if the step's artifact file is missing or empty
-- **Traceability gate**: `set-step-status --status complete` auto-runs traceability checks (IDEAS→BRD, BRD→SPEC, SPEC→PLAN) — skipped if prior step was skipped
-- **Dependency gate**: `set-step-status --step build --status in_progress` auto-checks phase dependencies
-- **Approval gate**: `set-step-status` returns exit 2 when approval is required (based on phase `mode` and config); re-run with `--force` after user approves
-- **Verification gate**: `set-step-status --step check --status complete` runs `config.commands.verify` and blocks on failure
-- **Config gate**: `set-step-status` refuses if `project.name` is still the default — run `/pew-init` first
-
-The orchestrator is still responsible for:
+The orchestrator is additionally responsible for (not enforced by pw.py):
 - **Code quality check**: review test files for empty assertions, `.toBeDefined()`-only tests, mocking the subject under test (Step 7b)
-- **Alignment gate**: spawn build-alignment-checker to verify FC→implementation and T→test coverage (Step 7b)
+- **Alignment check**: spawn `build-alignment-checker` to verify FC→implementation and T→test coverage (Step 7b)
 
 ### Severity Classification
 
@@ -433,15 +377,6 @@ If `config.conventions_file` is set and the file exists, it contains settled arc
 - **All agents**: Check conventions before making design choices. Follow accepted patterns.
 - **CHECK**: Flag implementation that contradicts a convention as a P1 alignment issue.
 - **Never recommend against** an accepted convention without explicit justification and user approval.
-
-### Resolution Step for Failed Gates
-
-1. Record failure
-2. Categorize: `fix | descope | defer`
-3. `fix`: make change, re-run failed gate only
-4. `descope`: update artifacts with rationale
-5. `defer`: add carry-forward note
-6. Max 3 resolution cycles per gate before escalating to user
 
 ### AskUserQuestion Integration
 
@@ -468,12 +403,8 @@ Never pass file content inline — agents read files themselves. Never read sour
 
 ### Operating Rules
 
-- Keep phase artifacts as per-phase source of truth
-- Do not implement before explicit user command (except in auto mode after all gates pass)
-- Do not advance to next phase with unresolved P1 issues
-- If scope changes, update all impacted docs in order
 - Commit discipline: atomic commits after completed steps (orchestrator commits, not agents)
-- Update `last_updated` in edited docs on every material change
+- If scope changes mid-phase, update all impacted docs in order (BRD → SPEC → PLAN)
 
 ### Definition of Done
 
