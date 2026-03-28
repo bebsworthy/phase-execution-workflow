@@ -19,9 +19,19 @@ You will receive:
 4. **Phase context** — phase number, title, tags, brief
 5. **Template path** — `templates/BRD.template.md` for reference format
 
+## Audit Derivation Mode
+
+When the phase has `size: audit`, the brief_file is an `AUDIT-BRIEF.md` containing pre-digested audit findings with per-file actions, severity levels, and before/after code examples. In this mode:
+
+1. Read the AUDIT-BRIEF.md as your primary source — each finding or finding group becomes one FC-nnn
+2. The "Evidence Target" for each FC is the file list from the audit's per-file actions
+3. Still perform a targeted Grep scan (step 5 below) to validate the audit's file list is complete — if additional files are found with the same pattern, add them as FCs or note in Non-Goals
+4. Acceptance criteria come directly from the audit brief's acceptance criteria section
+5. Keep the BRD lean — the audit has already done the analysis. Focus on structuring findings into FC format, not re-analyzing the problem
+
 ## Process
 
-1. If IDEAS.md path is provided, read it and identify all `selected` items. If a brief file path is provided, read the full document as primary context. For small phases (no IDEAS.md), derive scope directly from the phase brief, brief file, and refs.
+1. If IDEAS.md path is provided, read it and identify all `selected` items. If a brief file path is provided, read the full document as primary context. For small/audit phases (no IDEAS.md), derive scope directly from the phase brief, brief file, and refs.
 2. If refs are provided, read each referenced file to resolve finding IDs (F-001, J-001, etc.) and understand full context
 3. If conventions file is provided, read it — respect all accepted conventions
 4. Read the template for output format reference

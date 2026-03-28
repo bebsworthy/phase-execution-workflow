@@ -97,19 +97,22 @@ Or add `brief_file` directly to the tracker YAML under the phase.
 
 ### Phase Sizing
 
-Phases have a `size` field (`small | medium | large`, default: `large`) that controls which steps are mandatory:
+Phases have a `size` field (`small | medium | large | audit`, default: `large`) that controls which steps are mandatory:
 
 | Size | Steps Run | Steps Skipped | Use When |
 | --- | --- | --- | --- |
 | **large** | All 7 steps | None | Major features, new capabilities |
 | **medium** | BRD → RESEARCH → SPEC → PLAN → BUILD → CHECK | IDEAS | Well-understood features that don't need market research |
 | **small** | BRD → SPEC → PLAN → BUILD → CHECK | IDEAS, RESEARCH | Bug fixes, small changes, well-scoped tasks |
+| **audit** | BRD → SPEC → PLAN → BUILD → CHECK | IDEAS, RESEARCH | Phases from audit findings — agents derive from AUDIT-BRIEF.md |
 
 Skipped steps are pre-set to `skipped` status when the phase is created via `pw.sh add-phase --size <size>`. The `analyze-phase` command respects skipped steps and resumes from the first non-skipped incomplete step.
 
 For **medium** phases, RESEARCH still runs but skips the build-feature-benchmarker (market research) and UX research/design sub-agents — focus on technical research only.
 
 For **small** phases, the BRD should be focused but not shallow. The BRD writer still performs pattern analysis — scanning the codebase for all instances of patterns described in the brief — to ensure FCs cover the full scope, not just files mentioned in refs. Just FCs + acceptance criteria, no E2E test flows unless the phase is frontend-tagged.
+
+For **audit** phases (created by `/pew-audit-to-phases`), the phase has a `brief_file` pointing to an `AUDIT-BRIEF.md` with pre-digested audit findings — per-file actions, severity, before/after code examples, and acceptance criteria. BRD and SPEC agents operate in "audit derivation mode": they derive FC-nnn and T-nnn entries from the audit findings rather than researching from scratch. The BRD writer still performs a targeted pattern scan to catch files the audit may have missed.
 
 ---
 

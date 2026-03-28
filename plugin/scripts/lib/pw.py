@@ -16,7 +16,7 @@ from pathlib import Path
 import yaml
 
 VALID_STEP_STATUSES = {"not_started", "in_progress", "complete", "skipped"}
-VALID_PHASE_SIZES = {"small", "medium", "large", "vibe"}
+VALID_PHASE_SIZES = {"small", "medium", "large", "vibe", "audit"}
 STEP_ORDER = ["ideas", "brd", "research", "spec", "plan", "build", "check"]
 
 # Steps to auto-skip by phase size.  large = no skips (default).
@@ -24,6 +24,7 @@ SIZE_SKIP_STEPS: dict[str, set[str]] = {
     "large": set(),
     "medium": {"ideas"},
     "small": {"ideas", "research"},
+    "audit": {"ideas", "research"},
     "vibe": {"ideas", "brd", "research", "spec", "plan"},
 }
 STEP_FILE = {
@@ -1065,7 +1066,7 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("--refs", default=None,
                      help="Comma-separated reference doc paths (relative to repo root) for agents to read.")
     add.add_argument("--size", default=None, choices=sorted(VALID_PHASE_SIZES),
-                     help="Phase size: small skips IDEAS+RESEARCH, medium skips IDEAS, large runs all steps (default: large).")
+                     help="Phase size: small/audit skip IDEAS+RESEARCH, medium skips IDEAS, large runs all steps (default: large). audit is for phases from audit findings.")
     add.set_defaults(func=cmd_add_phase)
 
     lp = sub.add_parser("list-phases", help="List phases from tracker.")

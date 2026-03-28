@@ -12,25 +12,11 @@ This audit targets code quality issues in React/TypeScript applications: anti-pa
 
 ## Step 0 -- Initialize
 
-### 0a. Locate or Create Config
+### 0a. Load Config
 
-Check if `react-audit.yaml` exists in the current working directory.
+Read `pew.yaml` from the project root. If it doesn't exist, tell the user to run `/pew-init` first.
 
-**If it exists**: read it to get `output_dir` and scope settings.
-
-**If it doesn't exist**: create it with defaults:
-```yaml
-output_dir: ./audit/react
-exclude:
-  - node_modules
-  - dist
-  - build
-  - coverage
-  - "**/*.test.*"
-  - "**/*.spec.*"
-```
-
-Read the resolved `output_dir` from the config. Use this path everywhere `{output_dir}` appears in agent prompts.
+Extract `paths.audit_react` — this is the `{output_dir}` for all agents.
 
 ### 0b. Create Output Directory
 

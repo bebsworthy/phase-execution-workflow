@@ -879,6 +879,28 @@ class TestPhaseSizing:
         assert phase["steps"]["research"] == "not_started"
         assert phase["steps"]["brd"] == "not_started"
 
+    def test_audit_skips_ideas_and_research(self, repo: Path):
+        code, _ = _run(repo, "add-phase", "--number", "1", "--title", "Fix Critical Tests", "--size", "audit")
+        assert code == 0
+        data = pw.load_tracker(repo)
+        phase = data["phases"][0]
+        assert phase["size"] == "audit"
+        assert phase["steps"]["ideas"] == "skipped"
+        assert phase["steps"]["research"] == "skipped"
+        assert phase["steps"]["brd"] == "not_started"
+        assert phase["steps"]["spec"] == "not_started"
+        assert phase["steps"]["plan"] == "not_started"
+        assert phase["steps"]["build"] == "not_started"
+        assert phase["steps"]["check"] == "not_started"
+
+    def test_audit_phase_analyze_first_incomplete(self, repo: Path):
+        _run(repo, "add-phase", "--number", "1", "--title", "Audit Fix", "--size", "audit")
+        code, out = _run(repo, "analyze-phase", "--phase", "1", "--json")
+        assert code == 0
+        result = json.loads(out)
+        assert result["size"] == "audit"
+        assert result["first_incomplete_step"] == "brd"
+
     def test_large_skips_nothing(self, repo: Path):
         code, _ = _run(repo, "add-phase", "--number", "1", "--title", "Big Feature", "--size", "large")
         assert code == 0

@@ -19,10 +19,19 @@ You will receive:
 5. **Phase context** — phase number, title, tags
 6. **Template path** — `templates/SPEC.template.md` for reference format
 
+## Audit Derivation Mode
+
+When the phase has `size: audit`, RESEARCH.md does not exist (research step is skipped). The phase's brief_file (`AUDIT-BRIEF.md`) contains pre-digested audit findings with concrete remediation steps and before/after code examples. In this mode:
+
+1. Derive T-nnn test entries from the audit brief's acceptance criteria and per-file actions — each finding that changes behavior needs a test verifying the fix
+2. Architecture decisions are typically "follow the audit recommendation" — reference the finding ID rather than re-analyzing alternatives
+3. Keep the SPEC lean — the audit has already done the technical analysis. Focus on structuring the test plan and exit criteria, not re-researching the problem
+4. Skip sections that don't apply (e.g., API contracts for test-quality phases, data model for code-quality refactors)
+
 ## Process
 
 1. Read BRD.md to understand all FC-nnn requirements and AC-nnn acceptance criteria (including "Covers FC" linkage and validation signals)
-2. Read RESEARCH.md for architecture decisions and technical findings
+2. Read RESEARCH.md for architecture decisions and technical findings (skip if phase size is `audit` — RESEARCH.md won't exist)
 3. Read DESIGN.md if provided (frontend phases) for component/flow specs
 4. If conventions file is provided, read it — incorporate accepted conventions into spec decisions
 5. Read the template for output format reference
