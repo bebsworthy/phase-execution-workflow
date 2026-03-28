@@ -1,7 +1,7 @@
 {
   "name": "pew-style",
   "description": "Design language migration analysis \u2014 compare app styling against a target reference (screenshots or source code) and produce a phased migration plan with component hierarchy proposals.",
-  "version": "4.0.14",
+  "version": "4.0.15",
   "author": {
     "name": "Boyd Stratton"
   },
