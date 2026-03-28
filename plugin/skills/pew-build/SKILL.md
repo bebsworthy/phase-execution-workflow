@@ -287,15 +287,16 @@ After step 7d completes successfully for the current phase (autopilot mode only)
 | `plan phase <N> auto`                     | `pw.sh set-mode --phase N --mode auto`, then run Steps 1-5               |
 | `check phase <N> skip council`            | Execute Step 7 without council review (skip 7a, start at 7b)              |
 | `start ideas for phase <N> skip research` | Execute Step 1 without build-feature-benchmarker (internal/technical phases)    |
-| `start autopilot [from phase <N>]`        | `pw.sh set-mode --phase N --mode autopilot`, then run all eligible phases      |
-| `start autopilot --limit <N>`             | Same with phase limit                                                          |
+| `start autopilot [from phase <N>]`        | `pw.sh set-mode --from N --mode autopilot`, then run loop from phase N         |
+| `start autopilot phase <N> to <M>`        | `pw.sh set-mode --from N --to M --mode autopilot`, then run loop               |
 
 ### Script Commands Reference
 
 ```
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh <command>
   set-step-status --phase N --step S --status S [--force]  # enforces all gates; exit 1 = hard fail, exit 2 = approval needed (re-run with --force)
-  set-mode --phase N --mode manual|auto|autopilot  # set phase execution mode (controls approval gate behavior)
+  set-mode --phase N --mode manual|auto|autopilot  # single phase
+  set-mode --from N [--to M] --mode autopilot      # range: all non-complete phases N through M (or to end)
   analyze-phase --phase N [--json]
   add-phase --number N --title T [--brief "..."] [--brief-file PATH] [--depends-on X,Y] [--tags a,b] [--size small|medium|large|audit|vibe]
   list-phases [--status S] [--json]

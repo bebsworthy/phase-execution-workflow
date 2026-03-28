@@ -363,6 +363,7 @@ After closing a phase in autopilot mode:
 ```
 pw.sh set-step-status --phase N --step S --status ST [--force]
 pw.sh set-mode --phase N --mode manual|auto|autopilot
+pw.sh set-mode --from N [--to M] --mode autopilot
 pw.sh analyze-phase --phase N [--json]
 pw.sh add-phase --number N --title T [--brief] [--brief-file] [--depends-on] [--tags] [--size] [--mode]
 pw.sh list-phases [--status S] [--json]

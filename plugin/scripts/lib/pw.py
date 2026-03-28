@@ -233,14 +233,46 @@ def cmd_set_mode(args: argparse.Namespace) -> int:
     root = Path(args.repo_root).resolve() if args.repo_root else repo_root_from_script()
     config = load_config(root)
     data = load_tracker(root, config)
-    phase = find_phase(data, args.phase)
-    if phase is None:
-        print(f"Phase {args.phase} not found in tracker.")
+
+    phase_num = getattr(args, "phase", None)
+    from_num = getattr(args, "from_phase", None)
+    to_num = getattr(args, "to_phase", None)
+
+    if phase_num is not None and from_num is not None:
+        print("Cannot use both --phase and --from.")
         return 1
-    phase["mode"] = args.mode
+    if phase_num is None and from_num is None:
+        print("Must provide either --phase or --from.")
+        return 1
+
+    # Single phase mode
+    if phase_num is not None:
+        phase = find_phase(data, phase_num)
+        if phase is None:
+            print(f"Phase {phase_num} not found in tracker.")
+            return 1
+        phase["mode"] = args.mode
+        save_tracker(root, data, config)
+        render_plan(root, data, config)
+        print(f"Phase {phase['number']} mode -> {args.mode}")
+        return 0
+
+    # Range mode: --from [--to]
+    targets = [
+        p for p in data.get("phases", [])
+        if p["number"] >= from_num
+        and (to_num is None or p["number"] <= to_num)
+        and p.get("status") != "complete"
+    ]
+    if not targets:
+        print(f"No eligible phases found in range.")
+        return 0
+    for p in targets:
+        p["mode"] = args.mode
+        print(f"Phase {p['number']} {p['title']} mode -> {args.mode}")
     save_tracker(root, data, config)
     render_plan(root, data, config)
-    print(f"Phase {phase['number']} mode -> {args.mode}")
+    print(f"Set {len(targets)} phases to {args.mode}")
     return 0
 
 
@@ -363,9 +395,13 @@ def build_parser() -> argparse.ArgumentParser:
     lp.set_defaults(func=cmd_list_phases)
 
     sm = sub.add_parser("set-mode",
-                        help="Set phase execution mode. Use when switching between manual/auto/autopilot mid-phase. "
+                        help="Set phase execution mode. Use --phase for a single phase, or --from [--to] for a range. "
                              "Controls whether approval gates fire (exit 2) or are skipped.")
-    sm.add_argument("--phase", type=float, required=True, help="Phase number.")
+    sm.add_argument("--phase", type=float, default=None, help="Single phase number.")
+    sm.add_argument("--from", type=float, default=None, dest="from_phase",
+                    help="Start of range (inclusive). Sets mode on all non-complete phases from this number onward.")
+    sm.add_argument("--to", type=float, default=None, dest="to_phase",
+                    help="End of range (inclusive). Without --to, sets from --from to the last phase.")
     sm.add_argument("--mode", required=True, choices=sorted(VALID_PHASE_MODES),
                     help="manual: gates require user approval. auto: sequential with gates. autopilot: no user interaction.")
     sm.set_defaults(func=cmd_set_mode)

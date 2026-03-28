@@ -1190,6 +1190,130 @@ class TestHardenedGates:
         data = pw.load_tracker(repo)
         assert data["phases"][0]["mode"] == "autopilot"
 
+    def test_set_mode_range(self, repo: Path):
+        """--from 2 --to 4 sets mode on phases 2, 3, 4 only."""
+        for i in range(1, 6):
+            _run(repo, "add-phase", "--number", str(i), "--title", f"Phase {i}")
+        code, out = _run(repo, "set-mode", "--from", "2", "--to", "4", "--mode", "autopilot")
+        assert code == 0
+        data = pw.load_tracker(repo)
+        modes = {p["number"]: p["mode"] for p in data["phases"]}
+        assert modes[1] == "manual"
+        assert modes[2] == "autopilot"
+        assert modes[3] == "autopilot"
+        assert modes[4] == "autopilot"
+        assert modes[5] == "manual"
+
+    def test_set_mode_from_only(self, repo: Path):
+        """--from 3 without --to sets phases 3+ to the end."""
+        for i in range(1, 5):
+            _run(repo, "add-phase", "--number", str(i), "--title", f"Phase {i}")
+        code, _ = _run(repo, "set-mode", "--from", "3", "--mode", "auto")
+        assert code == 0
+        data = pw.load_tracker(repo)
+        modes = {p["number"]: p["mode"] for p in data["phases"]}
+        assert modes[1] == "manual"
+        assert modes[2] == "manual"
+        assert modes[3] == "auto"
+        assert modes[4] == "auto"
+
+    def test_autopilot_mode_guidance_on_step_start(self, repo: Path):
+        """Starting a step in autopilot prints mode guidance."""
+        _run(repo, "add-phase", "--number", "1", "--title", "Auto", "--size", "small", "--mode", "autopilot")
+        code, out = _run(repo, "set-step-status", "--phase", "1", "--step", "brd", "--status", "in_progress")
+        assert code == 0
+        assert "MODE: autopilot" in out
+        assert "AskUserQuestion" in out
+
+    def test_auto_mode_guidance_on_step_start(self, repo: Path):
+        """Starting a step in auto mode prints mode guidance."""
+        _run(repo, "add-phase", "--number", "1", "--title", "Auto", "--size", "small", "--mode", "auto")
+        code, out = _run(repo, "set-step-status", "--phase", "1", "--step", "brd", "--status", "in_progress")
+        assert code == 0
+        assert "MODE: auto" in out
+
+    def test_manual_mode_no_guidance(self, repo: Path):
+        """Starting a step in manual mode prints no MODE line."""
+        _add_phase(repo, size="small")
+        code, out = _run(repo, "set-step-status", "--phase", "24", "--step", "brd", "--status", "in_progress")
+        assert code == 0
+        assert "MODE:" not in out
+
+    def test_close_shows_next_autopilot_phase(self, repo: Path):
+        """After closing a phase, if next phase is autopilot, print NEXT guidance."""
+        _run(repo, "add-phase", "--number", "1", "--title", "First", "--size", "small", "--mode", "autopilot")
+        _run(repo, "add-phase", "--number", "2", "--title", "Second", "--size", "small", "--mode", "autopilot")
+        for step in ["brd", "spec", "plan", "build"]:
+            _complete_step(repo, 1, step, "First")
+        _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "in_progress")
+        code, out = _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "complete")
+        assert code == 0
+        assert "NEXT: Phase 2" in out
+        assert "autopilot" in out
+        assert "start it immediately" in out
+
+    def test_close_all_phases_complete(self, repo: Path):
+        """After closing the last phase, print 'All phases complete'."""
+        _run(repo, "add-phase", "--number", "1", "--title", "Only", "--size", "small", "--mode", "autopilot")
+        for step in ["brd", "spec", "plan", "build"]:
+            _complete_step(repo, 1, step, "Only")
+        _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "in_progress")
+        code, out = _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "complete")
+        assert code == 0
+        assert "All phases complete." in out
+
+    def test_close_autopilot_no_more_eligible(self, repo: Path):
+        """Autopilot phase closes but remaining phases are manual → autopilot complete."""
+        _run(repo, "add-phase", "--number", "1", "--title", "Auto", "--size", "small", "--mode", "autopilot")
+        _run(repo, "add-phase", "--number", "2", "--title", "Manual", "--size", "small", "--mode", "manual")
+        for step in ["brd", "spec", "plan", "build"]:
+            _complete_step(repo, 1, step, "Auto")
+        _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "in_progress")
+        code, out = _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "complete")
+        assert code == 0
+        assert "Autopilot complete" in out
+
+    def test_close_skips_phase_with_unmet_deps(self, repo: Path):
+        """Next autopilot phase has unmet deps → skip to one with met deps."""
+        _run(repo, "add-phase", "--number", "1", "--title", "First", "--size", "small", "--mode", "autopilot")
+        # Phase 2 depends on phase 3 (unmet), phase 3 has no deps
+        _run(repo, "add-phase", "--number", "2", "--title", "Blocked",
+             "--size", "small", "--mode", "autopilot", "--depends-on", "3")
+        _run(repo, "add-phase", "--number", "3", "--title", "Free",
+             "--size", "small", "--mode", "autopilot")
+        for step in ["brd", "spec", "plan", "build"]:
+            _complete_step(repo, 1, step, "First")
+        _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "in_progress")
+        code, out = _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "complete")
+        assert code == 0
+        assert "NEXT: Phase 3" in out  # skipped phase 2 (deps unmet)
+
+    def test_close_manual_mode_no_next(self, repo: Path):
+        """Manual mode close prints no NEXT or Autopilot line."""
+        _run(repo, "add-phase", "--number", "1", "--title", "Manual", "--size", "small", "--mode", "manual")
+        _run(repo, "add-phase", "--number", "2", "--title", "Second", "--size", "small", "--mode", "autopilot")
+        for step in ["brd", "spec", "plan", "build"]:
+            _complete_step(repo, 1, step, "Manual")
+        _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "in_progress")
+        code, out = _run(repo, "set-step-status", "--phase", "1", "--step", "check", "--status", "complete")
+        assert code == 0
+        assert "NEXT:" not in out
+        assert "Autopilot complete" not in out
+
+    def test_set_mode_range_skips_complete(self, repo: Path):
+        """Completed phases in range are not changed."""
+        _run(repo, "add-phase", "--number", "1", "--title", "Done")
+        _run(repo, "add-phase", "--number", "2", "--title", "Pending")
+        # Manually mark phase 1 as complete in tracker
+        data = pw.load_tracker(repo)
+        data["phases"][0]["status"] = "complete"
+        pw.save_tracker(repo, data)
+        code, _ = _run(repo, "set-mode", "--from", "1", "--to", "2", "--mode", "autopilot")
+        assert code == 0
+        data = pw.load_tracker(repo)
+        assert data["phases"][0]["mode"] == "manual"  # complete, not changed
+        assert data["phases"][1]["mode"] == "autopilot"
+
     def test_force_close_skips_reverify(self, repo: Path):
         """After approval gate (exit 2), --force should not re-run verification."""
         (repo / "pew.yaml").write_text(yaml.dump({

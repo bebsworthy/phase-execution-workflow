@@ -354,4 +354,39 @@ def cmd_set_step_status(args: argparse.Namespace) -> int:
     render_plan(root, data, config)
 
     print(f"Phase {phase['number']} step '{args.step}' -> {args.status}")
+
+    # --- Mode-aware guidance ---
+    if args.status == "in_progress":
+        if mode == "autopilot":
+            print(f"MODE: autopilot — open questions auto-resolved (use recommended option, "
+                  f"do NOT call AskUserQuestion). Fix policy: P1 auto-fix, P2 auto-fix then defer, P3 auto-defer.")
+        elif mode == "auto":
+            print(f"MODE: auto — proceed to next step automatically after this one completes. "
+                  f"Approval gates still require user confirmation.")
+
+    if args.step == "check" and args.status == "complete":
+        # Phase just closed — find next eligible phase
+        remaining = sorted(
+            [p for p in data.get("phases", [])
+             if p.get("status") != "complete"],
+            key=lambda p: p["number"],
+        )
+        if not remaining:
+            print("All phases complete.")
+        elif mode in ("auto", "autopilot"):
+            # Find next eligible auto/autopilot phase with deps met
+            found = False
+            for cand in remaining:
+                cand_mode = cand.get("mode", "manual")
+                if cand_mode not in ("auto", "autopilot"):
+                    continue
+                satisfied, _, _ = _check_dependencies(data, cand)
+                if satisfied:
+                    print(f"NEXT: Phase {cand['number']} {cand['title']} is in "
+                          f"{cand_mode} mode — start it immediately.")
+                    found = True
+                    break
+            if not found:
+                print("Autopilot complete — no more eligible phases in auto/autopilot mode.")
+
     return 0
