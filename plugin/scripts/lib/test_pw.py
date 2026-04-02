@@ -592,6 +592,140 @@ class TestListPhases:
         assert len(phases) == 1
         assert phases[0]["title"] == "A"
 
+    def test_default_windowing(self, repo: Path):
+        """Default shows started + first 3 not_started, excludes complete."""
+        for i in range(1, 7):
+            _add_phase(repo, i, f"P{i}", tags=None, brief=None, size="small")
+        # Complete phase 1
+        for step in ["brd", "spec", "plan", "build", "check"]:
+            _complete_step(repo, 1, step, "P1")
+        # Start phase 2
+        _run(repo, "set-step-status", "--phase", "2",
+             "--step", "brd", "--status", "in_progress")
+        code, out = _run(repo, "list-phases", "--json")
+        phases = json.loads(out)
+        numbers = [p["number"] for p in phases]
+        assert 1 not in numbers   # complete excluded
+        assert 2 in numbers       # started included
+        assert 3 in numbers       # upcoming 1 of 3
+        assert 4 in numbers       # upcoming 2 of 3
+        assert 5 in numbers       # upcoming 3 of 3
+        assert 6 not in numbers   # beyond window
+
+    def test_default_windowing_text(self, repo: Path):
+        """Text output also respects windowing."""
+        for i in range(1, 6):
+            _add_phase(repo, i, f"P{i}", tags=None, brief=None, size="small")
+        # Complete phase 1
+        for step in ["brd", "spec", "plan", "build", "check"]:
+            _complete_step(repo, 1, step, "P1")
+        code, out = _run(repo, "list-phases")
+        assert "Phase 1:" not in out  # complete excluded
+        assert "Phase 2:" in out
+
+    def test_all_flag(self, repo: Path):
+        """--all returns all phases including complete."""
+        for i in range(1, 6):
+            _add_phase(repo, i, f"P{i}", tags=None, brief=None, size="small")
+        # Complete phase 1
+        for step in ["brd", "spec", "plan", "build", "check"]:
+            _complete_step(repo, 1, step, "P1")
+        code, out = _run(repo, "list-phases", "--all", "--json")
+        phases = json.loads(out)
+        assert len(phases) == 5
+
+    def test_upcoming_flag(self, repo: Path):
+        """--upcoming controls how many not_started phases to show."""
+        for i in range(1, 6):
+            _add_phase(repo, i, f"P{i}", tags=None, brief=None)
+        code, out = _run(repo, "list-phases", "--upcoming", "1", "--json")
+        phases = json.loads(out)
+        assert len(phases) == 1  # all not_started, only 1 shown
+        assert phases[0]["number"] == 1
+
+    def test_status_overrides_windowing(self, repo: Path):
+        """--status returns all matching phases, no windowing."""
+        for i in range(1, 8):
+            _add_phase(repo, i, f"P{i}", tags=None, brief=None)
+        code, out = _run(repo, "list-phases", "--status", "not_started", "--json")
+        phases = json.loads(out)
+        assert len(phases) == 7
+
+
+# ---------------------------------------------------------------------------
+# Commands: next-phase
+# ---------------------------------------------------------------------------
+
+class TestNextPhase:
+    def test_no_phases(self, repo: Path):
+        code, out = _run(repo, "next-phase", "--json")
+        assert code == 0
+        result = json.loads(out)
+        assert result == {"none": True}
+
+    def test_no_phases_text(self, repo: Path):
+        code, out = _run(repo, "next-phase")
+        assert code == 0
+        assert "No eligible phase found" in out
+
+    def test_finds_first_eligible(self, repo: Path):
+        _add_phase(repo, 1, "First", tags=None, brief=None)
+        _add_phase(repo, 2, "Second", tags=None, brief=None)
+        code, out = _run(repo, "next-phase", "--json")
+        assert code == 0
+        result = json.loads(out)
+        assert result["number"] == 1
+        assert result["title"] == "First"
+        assert result["first_incomplete_step"] == "ideas"
+
+    def test_skips_complete(self, repo: Path):
+        _add_phase(repo, 1, "Done", tags=None, brief=None, size="small")
+        _add_phase(repo, 2, "Todo", tags=None, brief=None)
+        # Complete phase 1
+        for step in ["brd", "spec", "plan", "build", "check"]:
+            _complete_step(repo, 1, step, "Done")
+        code, out = _run(repo, "next-phase", "--json")
+        result = json.loads(out)
+        assert result["number"] == 2
+
+    def test_mode_filter(self, repo: Path):
+        _add_phase(repo, 1, "Manual", tags=None, brief=None)
+        _add_phase(repo, 2, "Auto", tags=None, brief=None)
+        _run(repo, "set-mode", "--phase", "2", "--mode", "autopilot")
+        code, out = _run(repo, "next-phase", "--mode", "auto,autopilot", "--json")
+        result = json.loads(out)
+        assert result["number"] == 2
+        assert result["mode"] == "autopilot"
+
+    def test_respects_dependencies(self, repo: Path):
+        _add_phase(repo, 1, "Dep", tags=None, brief=None)
+        _add_phase(repo, 2, "Blocked", tags=None, brief=None, depends_on="1")
+        _add_phase(repo, 3, "Free", tags=None, brief=None)
+        code, out = _run(repo, "next-phase", "--json")
+        result = json.loads(out)
+        assert result["number"] == 1  # phase 2 is blocked, 1 is first eligible
+
+    def test_text_output(self, repo: Path):
+        _add_phase(repo, 1, "First", tags=None, brief=None)
+        code, out = _run(repo, "next-phase")
+        assert "Phase 1" in out
+        assert "First" in out
+        assert "resume at: ideas" in out
+
+    def test_all_blocked(self, repo: Path):
+        """All phases have unmet deps — returns none."""
+        _add_phase(repo, 1, "A", tags=None, brief=None, depends_on="99")
+        code, out = _run(repo, "next-phase", "--json")
+        result = json.loads(out)
+        assert result == {"none": True}
+
+    def test_includes_size(self, repo: Path):
+        _add_phase(repo, 1, "Small", tags=None, brief=None, size="small")
+        code, out = _run(repo, "next-phase", "--json")
+        result = json.loads(out)
+        assert result["size"] == "small"
+        assert result["first_incomplete_step"] == "brd"  # ideas skipped for small
+
 
 # ---------------------------------------------------------------------------
 # render_plan

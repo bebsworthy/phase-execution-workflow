@@ -27,7 +27,7 @@ if ! echo "$COMMAND" | grep -qE '\bgit\s+(add|commit)\b'; then
 fi
 
 # Check for active vibe phase via pw.sh
-PHASES=$("$SCRIPT_DIR/pw.sh" list-phases --json 2>/dev/null) || exit 0
+PHASES=$("$SCRIPT_DIR/pw.sh" list-phases --status started --json 2>/dev/null) || exit 0
 
 # Find active vibe phase (size=vibe, build=in_progress)
 VIBE_INFO=$(echo "$PHASES" | python3 -c "

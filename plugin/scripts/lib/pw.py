@@ -197,7 +197,15 @@ def cmd_list_phases(args: argparse.Namespace) -> int:
     phases = data.get("phases", [])
 
     if args.status:
+        # Explicit status filter: show all matching (no windowing)
         phases = [p for p in phases if p.get("status") == args.status]
+    elif not getattr(args, "all", False):
+        # Default windowing: started + first N not_started
+        upcoming = getattr(args, "upcoming", 3) or 3
+        started = [p for p in phases if p.get("status") == "started"]
+        not_started = [p for p in phases if p.get("status") == "not_started"]
+        not_started = not_started[:upcoming]
+        phases = sorted(started + not_started, key=lambda p: p["number"])
 
     if args.json:
         print(json.dumps(phases, indent=2))
@@ -226,6 +234,57 @@ def cmd_next_phase_number(args: argparse.Namespace) -> int:
     else:
         max_num = max(p["number"] for p in phases)
         print(_norm_num(int(max_num) + 1))
+    return 0
+
+
+def cmd_next_phase(args: argparse.Namespace) -> int:
+    root = Path(args.repo_root).resolve() if args.repo_root else repo_root_from_script()
+    config = load_config(root)
+    data = load_tracker(root, config)
+
+    phases = sorted(
+        [p for p in data.get("phases", []) if p.get("status") != "complete"],
+        key=lambda p: p["number"],
+    )
+
+    mode_filter = None
+    if getattr(args, "mode", None):
+        mode_filter = {m.strip() for m in args.mode.split(",") if m.strip()}
+
+    for phase in phases:
+        if mode_filter and phase.get("mode", "manual") not in mode_filter:
+            continue
+        satisfied, _, _ = _check_dependencies(data, phase)
+        if not satisfied:
+            continue
+
+        first_incomplete = None
+        for step in STEP_ORDER:
+            status = phase["steps"].get(step, "not_started")
+            if status not in ("complete", "skipped"):
+                first_incomplete = step
+                break
+
+        result = {
+            "number": phase["number"],
+            "title": phase["title"],
+            "mode": phase.get("mode", "manual"),
+            "status": phase.get("status", "not_started"),
+            "size": phase.get("size", "large"),
+            "first_incomplete_step": first_incomplete,
+        }
+
+        if args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            step_info = f" (resume at: {first_incomplete})" if first_incomplete else ""
+            print(f"Phase {result['number']}: {result['title']} [{result['mode']}]{step_info}")
+        return 0
+
+    if args.json:
+        print(json.dumps({"none": True}))
+    else:
+        print("No eligible phase found.")
     return 0
 
 
@@ -389,9 +448,13 @@ def build_parser() -> argparse.ArgumentParser:
     add.set_defaults(func=cmd_add_phase)
 
     lp = sub.add_parser("list-phases",
-                        help="List all phases from tracker. Use --json for programmatic consumption, --status to filter.")
-    lp.add_argument("--status", default=None, help="Filter phases by status (not_started, started, complete).")
-    lp.add_argument("--json", action="store_true", help="Output full phase data as JSON array.")
+                        help="List phases from tracker. Default: active (started) + next 3 upcoming. "
+                             "Use --all for all phases, --status to filter explicitly.")
+    lp.add_argument("--status", default=None, help="Filter phases by status (not_started, started, complete). Bypasses default windowing.")
+    lp.add_argument("--json", action="store_true", help="Output phase data as JSON array.")
+    lp.add_argument("--all", action="store_true", help="Show all phases including complete (overrides default windowing).")
+    lp.add_argument("--upcoming", type=int, default=3,
+                    help="Number of not_started phases to include (default 3). Ignored with --all or --status.")
     lp.set_defaults(func=cmd_list_phases)
 
     sm = sub.add_parser("set-mode",
@@ -480,6 +543,16 @@ def build_parser() -> argparse.ArgumentParser:
                          help="Output the next available integer phase number (max existing + 1, or 1 if no phases). "
                               "Use when auto-generating phases (e.g., from audit-to-phases).")
     npn.set_defaults(func=cmd_next_phase_number)
+
+    nph = sub.add_parser("next-phase",
+                         help="Find the next eligible phase: non-complete, dependencies satisfied. "
+                              "Returns compact JSON with phase number, title, mode, and first incomplete step. "
+                              "Use --mode to filter by execution mode (e.g., 'auto,autopilot' for the autopilot loop).")
+    nph.add_argument("--mode", default=None,
+                     help="Comma-separated mode filter (e.g., 'auto,autopilot'). Without this, returns first eligible regardless of mode.")
+    nph.add_argument("--json", action="store_true",
+                     help="Output as JSON. Returns {number, title, mode, status, size, first_incomplete_step} or {none: true}.")
+    nph.set_defaults(func=cmd_next_phase)
 
     return p
 

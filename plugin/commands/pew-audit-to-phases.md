@@ -39,7 +39,7 @@ Read `{config.paths.audit_react}/07-synthesis.md` — extract the tiered remedia
 
 Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh next-phase-number` to get the starting phase number.
 
-Then run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh list-phases --json` to understand scheduling context:
+Then run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh list-phases --status started --json` to understand scheduling context:
 
 1. **No phases exist** (Scenario 2 / fresh project):
    - Default scheduling: "start now"
@@ -182,7 +182,7 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh add-phase \
   --depends-on X
 ```
 
-After creating all phases, run `pw.sh list-phases --json` to show the updated phase list.
+After creating all phases, run `pw.sh list-phases` to show the updated phase list.
 
 Output:
 ```

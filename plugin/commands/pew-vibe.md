@@ -14,7 +14,7 @@ Read the full vibe framework from `skills/pew-vibe/SKILL.md` for decision record
 
 Before creating a new phase, check if one is already in progress:
 
-1. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh list-phases --json`
+1. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh list-phases --status started --json`
 2. Find any phase where `size == "vibe"` AND step `build` is `in_progress`
 3. If found:
    - Set phase number, title, and phase-dir from the existing phase
@@ -29,7 +29,7 @@ Before creating a new phase, check if one is already in progress:
 1. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh validate-config`. If no pew.yaml, tell user to run `/pew-init` first.
 2. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config` to load config.
 3. Determine phase number:
-   - Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh list-phases --json`
+   - Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh list-phases --all --json`
    - Find the last phase with BUILD step `in_progress` or `complete` → call it N
    - Find the next phase after N → call it M
    - Vibe phase number = midpoint(N, M), rounded to 1 decimal

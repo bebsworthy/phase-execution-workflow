@@ -251,11 +251,9 @@ This step stays with the orchestrator — it is coordination work (dispatching e
 After step 7d completes successfully for the current phase (autopilot mode only):
 
 0. **Verify mode is set**: Before entering the loop, confirm `set-mode` was already called for the target phases. If starting fresh, run `pw.sh set-mode --from N [--to M] --mode autopilot` first.
-1. Run `pw.sh list-phases --json`. Filter to phases where status is not `complete` and not `skipped`. Sort by phase number ascending.
-2. For each candidate phase, run `pw.sh check-dependencies --phase N`.
-3. The first candidate with satisfied dependencies becomes the next phase. If no candidates have satisfied dependencies, skip to step 6.
-4. Run `pw.sh analyze-phase --phase N --json` and begin at the first incomplete step. Continue the full step dispatch loop.
-5. After closing the phase, repeat from step 1. If `--limit` was specified and reached, proceed to step 6.
+1. Run `pw.sh next-phase --mode auto,autopilot --json`. If result contains `"none": true`, no more eligible phases — skip to step 6.
+2. Use the returned `number` and `first_incomplete_step`. Run `pw.sh analyze-phase --phase N --json` and begin at the first incomplete step. Continue the full step dispatch loop.
+3. After closing the phase, repeat from step 1. If `--limit` was specified and reached, proceed to step 6.
 6. **Produce autopilot summary report**:
    ```
    Autopilot complete — N phases processed
@@ -302,7 +300,8 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh <command>
   set-mode --from N [--to M] --mode autopilot      # range: all non-complete phases N through M (or to end)
   analyze-phase --phase N [--json]
   add-phase --number N --title T [--brief "..."] [--brief-file PATH] [--depends-on X,Y] [--tags a,b] [--size small|medium|large|audit|vibe]
-  list-phases [--status S] [--json]
+  list-phases [--status S] [--json] [--all] [--upcoming N]  # default: active + next 3 upcoming
+  next-phase [--mode M] [--json]                 # first eligible phase (deps satisfied); M = comma-separated mode filter
   next-phase-number                              # output next available integer phase number
   verify-traceability --phase N --from S --to S    # exit 1 if missing IDs found
   check-dependencies --phase N [--through S]   # --through: deps completed through step S (not fully complete)
