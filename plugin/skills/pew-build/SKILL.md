@@ -81,6 +81,8 @@ Each agent receives: phase context (number, title, tags, brief, brief_file if se
 
 **Open question protocol** (applies to Steps 1-3): If an agent reports open questions, in autopilot mode proceed with the recommended option and record the question + chosen answer — pass all to the spec-writer (Step 4) for ADR entries in SPEC.md. Otherwise, present via `AskUserQuestion` (see format below) and re-spawn agent with answers.
 
+**Mode initialization (REQUIRED before auto/autopilot execution):** When the user requests `auto` or `autopilot` mode, you MUST run `pw.sh set-mode` BEFORE executing any steps. For single phase: `set-mode --phase N --mode <mode>`. For autopilot range: `set-mode --from N [--to M] --mode autopilot`. Verify the mode was set by checking the command output. Never rely on phases already having the correct mode — always set it explicitly.
+
 #### Step 1: IDEAS
 
 | Agent | Input | Output |
@@ -248,6 +250,7 @@ This step stays with the orchestrator — it is coordination work (dispatching e
 
 After step 7d completes successfully for the current phase (autopilot mode only):
 
+0. **Verify mode is set**: Before entering the loop, confirm `set-mode` was already called for the target phases. If starting fresh, run `pw.sh set-mode --from N [--to M] --mode autopilot` first.
 1. Run `pw.sh list-phases --json`. Filter to phases where status is not `complete` and not `skipped`. Sort by phase number ascending.
 2. For each candidate phase, run `pw.sh check-dependencies --phase N`.
 3. The first candidate with satisfied dependencies becomes the next phase. If no candidates have satisfied dependencies, skip to step 6.

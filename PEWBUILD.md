@@ -177,7 +177,7 @@ flowchart TD
     CLOSE --> SAVE
 ```
 
-### Error messages
+### Output messages
 
 Every gate failure prints:
 - `BLOCKED:` prefix with what failed
@@ -186,6 +186,29 @@ Every gate failure prints:
 Approval gates print:
 - `APPROVAL REQUIRED:` with context
 - `Action: Present the ... gate to the user via AskUserQuestion. After user approves, re-run with --force.`
+
+### Mode-aware step guidance
+
+After every successful `set-step-status` call, pw.py prints contextual guidance so the orchestrator doesn't have to remember mode rules:
+
+**On step start** (`in_progress`):
+
+| Mode | Output |
+|---|---|
+| **autopilot** | `MODE: autopilot — open questions auto-resolved (use recommended option, do NOT call AskUserQuestion). Fix policy: P1 auto-fix, P2 auto-fix then defer, P3 auto-defer.` |
+| **auto** | `MODE: auto — proceed to next step automatically after this one completes. Approval gates still require user confirmation.` |
+| **manual** | No MODE line (default behavior) |
+
+**On phase close** (`check → complete`):
+
+| Situation | Output |
+|---|---|
+| Next auto/autopilot phase with deps met exists | `NEXT: Phase 5 Feature X is in autopilot mode — start it immediately.` |
+| Current was auto/autopilot but no eligible phases left | `Autopilot complete — no more eligible phases in auto/autopilot mode.` |
+| All phases complete | `All phases complete.` |
+| Current was manual | No guidance (user drives next action) |
+
+The NEXT directive checks dependency satisfaction — it won't recommend a phase whose dependencies aren't met, skipping to the first eligible one instead.
 
 ---
 

@@ -115,7 +115,7 @@ See [plugin-groom/](plugin-groom/) for details.
 1. **pew.yaml** at your repo root defines project-specific settings (paths, stack, commands, competitors)
 2. `/pew-build` activates the workflow — it reads config on-demand, manages phase state, and orchestrates agents
 3. Agents receive scoped project context + review profiles + playbooks automatically
-4. Quality gates (traceability, approval, council review) enforce precision at every step
+4. Quality gates enforce precision at every step — artifact existence, traceability, dependencies, verification, and approval gates are all enforced programmatically by `pw.py` (agents cannot bypass them)
 
 ## Project-specific playbooks
 
@@ -135,6 +135,8 @@ Not every change needs the full 7-step loop. Use `--size` when adding phases:
 | `large` (default) | All 7 steps | Major features |
 | `medium` | Skips IDEAS | Known features, no market research needed |
 | `small` | Skips IDEAS + RESEARCH | Bug fixes, small scoped changes |
+| `audit` | Skips IDEAS + RESEARCH | Phases from audit findings (uses AUDIT-BRIEF.md) |
+| `vibe` | Skips all planning | Build-first mode (managed by `/pew-vibe`) |
 
 ## Commands
 
@@ -148,6 +150,9 @@ Not every change needs the full 7-step loop. Use `--size` when adding phases:
   start building phase <N>     # explicit BUILD approval
   check phase <N>              # run CHECK/CLOSE
   status phase <N>             # show progress
+  start autopilot              # run all phases end-to-end, no user interaction
+  start autopilot from phase 3 # start from a specific phase
+  start autopilot phase 3 to 7 # run a range of phases
 
 /pew-vibe                       # start a vibe phase (build first, document post-hoc)
 /pew-ux-audit                  # run full 5-phase UX/UI audit
