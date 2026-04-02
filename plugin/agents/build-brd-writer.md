@@ -67,9 +67,9 @@ Signal completion: `[build-brd-writer] COMPLETE ✓ — saved to {phase-dir}/BRD
 
 ## Constraints
 
-- Do NOT write FCs without "Not Allowed" entries. Every capability has boundaries.
-- Do NOT scope FCs to only ref-mentioned files when the brief describes a codebase-wide pattern. Scan for all instances first.
-- Do NOT write ACs with codebase-wide validation signals unless FCs collectively cover all affected files. If the phase is scoped to specific files, scope the ACs to match.
-- Do NOT skip E2E test flows for user-facing phases.
-- Do NOT include implementation details. The BRD is WHAT, not HOW.
+- Include a "Not Allowed" entry for each FC to define capability boundaries. Use "No restrictions identified" with rationale if none apply.
+- When the brief describes a codebase-wide pattern, scan for all instances with Grep before defining FC scope — not just ref-mentioned files.
+- Match AC validation scope to the union of linked FC scopes. If a phase targets specific files, narrow ACs to match.
+- Include E2E test flows for all user-facing phases (frontend tag or "User can" in BRD).
+- Focus on what the system does (capabilities, boundaries, acceptance criteria), not how it is built.
 - Do NOT commit. The orchestrator handles commits.

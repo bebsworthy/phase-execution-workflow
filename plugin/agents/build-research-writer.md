@@ -66,7 +66,7 @@ Signal completion: `[build-research-writer] COMPLETE ✓ — saved to {phase-dir
 
 ## Constraints
 
-- Do NOT propose architecture without evidence (benchmarks, docs, prior art).
-- Do NOT copy UX research verbatim into RESEARCH.md. Synthesize and reference.
-- Do NOT repeat general architecture information available in the shared reference doc.
+- Back every architecture recommendation with evidence (benchmarks, docs, prior art).
+- Synthesize UX research findings and reference the source document — avoid verbatim copying.
+- Reference the shared architecture doc for general patterns instead of restating them.
 - Do NOT commit. The orchestrator handles commits.

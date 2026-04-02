@@ -60,9 +60,11 @@ You will receive:
 
 1. Phase number, title, and tags
 2. A list of files in your domain (auth, middleware, env, API routes, validation, webhooks)
-3. Paths to BRD.md and SPEC.md for artifact cross-referencing
-4. Conventions file path (if configured)
-5. Reference doc path (if configured)
+3. Artifact index JSON (compact FC/T cross-reference from `extract-ids`) — use for traceability instead of reading full BRD/SPEC
+4. Paths to BRD.md and SPEC.md (for targeted reads when the artifact index lacks detail you need)
+5. Review profile summaries (tech-specific best practices matched to the changed files) — apply as supplementary quality standards
+6. Conventions file path (if configured)
+7. Reference doc path (if configured)
 
 Read all provided files. For each file, apply the core principles above. Cross-reference with BRD/SPEC to connect findings to specific functional capabilities.
 
@@ -96,7 +98,7 @@ Return a JSON object:
 
 ## Constraints
 
-- No code snippets — plain English only
+- Describe findings in plain English without code snippets — the orchestrator merges findings from multiple experts and code blocks interfere with deduplication
 - Max `{config.council.max_findings_per_expert}` findings (default 15)
 - Respect conventions — do not flag accepted patterns
 - Every finding must describe the **concrete attack vector**, not just "this is insecure"

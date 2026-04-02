@@ -153,3 +153,5 @@ Commit `pew.yaml` and the phases directory with an appropriate message:
 - Update: `chore: update PEW configuration`
 
 Tell the user: "PEW is configured. Run `/pew-build` and say `start phase 1` to begin, or `/pew-vibe` for build-first mode."
+
+Signal completion: `[pew-init] COMPLETE ✓ — saved pew.yaml`

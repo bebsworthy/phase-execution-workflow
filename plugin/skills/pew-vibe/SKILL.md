@@ -11,33 +11,7 @@ user-invocable: true
 
 ## Purpose
 
-Vibe mode inverts the standard pew-build flow. Instead of IDEAS → BUILD (plan everything, then build), you build first following user instructions, record decisions as they happen, then run the full CHECK/CLOSE quality gate at the end.
-
-Use vibe mode when:
-- User testing reveals adjustments needed ("move this button", "add a date column")
-- Quick iterations on a live feature that doesn't need market research or formal planning
-- The plan met the enemy and didn't survive — adapt while keeping traceability
-
-## How It Differs from pew-build
-
-| Aspect | pew-build | pew-vibe |
-| --- | --- | --- |
-| Flow | IDEAS → BRD → RESEARCH → SPEC → PLAN → BUILD → CHECK | BUILD (with decision log) → Synthesize BRD/SPEC → CHECK |
-| Planning | Upfront, before code | Post-hoc, from code + decisions |
-| Artifacts | Written before implementation | Generated retroactively by synthesizer |
-| Quality gate | Same CHECK/CLOSE | Same CHECK/CLOSE |
-| Phase size | large/medium/small | vibe (skips ideas, brd, research, spec, plan) |
-
-## How It Differs from Pure Vibe Coding
-
-A vibe phase still benefits from:
-- **Decision recording** — every change is logged with rationale
-- **Post-hoc BRD/SPEC** — synthesized before CHECK so alignment can be verified
-- **Full council review** — same experts, same standards
-- **Alignment checking** — code verified against the synthesized requirements
-- **Phase closing** — verification evidence, test closure, optional retro
-
----
+Vibe mode inverts pew-build: BUILD first with a decision log, then synthesize BRD/SPEC post-hoc, then full CHECK/CLOSE. Use for user-testing feedback, quick iterations, and plan-didn't-survive situations.
 
 ## Resume & Continuity
 
@@ -137,3 +111,26 @@ Any gaps found by the alignment checker indicate:
 - Tests that are missing for documented changes
 
 These are handled through the normal fix cycle (fix/descope/defer).
+
+---
+
+## Appendix: Comparison Tables
+
+### How It Differs from pew-build
+
+| Aspect | pew-build | pew-vibe |
+| --- | --- | --- |
+| Flow | IDEAS → BRD → RESEARCH → SPEC → PLAN → BUILD → CHECK | BUILD (with decision log) → Synthesize BRD/SPEC → CHECK |
+| Planning | Upfront, before code | Post-hoc, from code + decisions |
+| Artifacts | Written before implementation | Generated retroactively by synthesizer |
+| Quality gate | Same CHECK/CLOSE | Same CHECK/CLOSE |
+| Phase size | large/medium/small | vibe (skips ideas, brd, research, spec, plan) |
+
+### How It Differs from Pure Vibe Coding
+
+A vibe phase still benefits from:
+- **Decision recording** — every change is logged with rationale
+- **Post-hoc BRD/SPEC** — synthesized before CHECK so alignment can be verified
+- **Full council review** — same experts, same standards
+- **Alignment checking** — code verified against the synthesized requirements
+- **Phase closing** — verification evidence, test closure, optional retro

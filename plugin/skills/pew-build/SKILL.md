@@ -24,6 +24,46 @@ Config fields the orchestrator references directly (agents receive the full scop
 - `config.approval_gates.before_build` / `config.approval_gates.before_close` — approval gate toggles (default: true; skipped when phase `mode` is `autopilot`)
 - `config.product_review.enabled` — whether `build-product-reviewer` runs in CHECK (frontend phases)
 
+## Agent Spawning Protocol
+
+Config fields (`config.*`) are **auto-injected** via the `SubagentStart` hook — do not embed config in spawn prompts.
+
+When spawning any sub-agent, pass only:
+
+1. **Phase context**: number, title, tags, brief, brief_file (if set), phase directory path
+2. **File paths**: input artifact paths (not content), output path, template path
+3. **Refs paths**: if the phase has refs
+
+Never pass file content inline — agents read files themselves. Never read source code or artifact content yourself — that's the agent's job.
+
+## Operating Rules
+
+- Commit discipline: atomic commits after completed steps (orchestrator commits, not agents)
+- If scope changes mid-phase, update all impacted docs in order (BRD → SPEC → PLAN)
+
+## Auto Mode Rules
+
+1. **Step ordering is strict** — same 7-step sequence, no skipping
+2. **Hard gate policy** — each step must be complete + committed before the next begins
+3. **Sub-agent delegation** — every step is handled by a dedicated agent; the orchestrator only validates and gates
+4. **Stop condition** — approval gates always fire even in auto mode. Unresolved open questions with no good default also stop. After gate approval, resume auto mode execution from the next step without requiring a separate "continue" command.
+5. **Default-by-best-practice** — proceed + log as ADR in SPEC.md
+6. **Anti-drift lock** — before build step, only edit phase artifacts
+7. **Pre-build** — pw.py auto-checks dependencies when starting build (no manual call needed)
+
+## Autopilot Mode Rules
+
+Autopilot mode inherits all auto mode rules (strict step ordering, step-completion gates, sub-agent delegation, anti-drift lock, pre-build dependency check) with these overrides:
+
+1. **Approval gates skipped** — both `before_build` and `before_close` gates are skipped entirely. Log: "Autopilot: skipping BUILD/CLOSE approval gate for phase N."
+2. **Open questions auto-resolved** — do not call `AskUserQuestion`. Always proceed with the recommended (first) option. Record each auto-resolved question and chosen answer. Pass all to the spec-writer (Step 4) for inclusion as ADR entries in SPEC.md.
+3. **Fix cycle auto-policy**:
+   - P1: auto-fix (up to 3 cycles). If still unresolved after 3 cycles → **hard stop autopilot**, report to user.
+   - P2: auto-fix on first pass, defer with rationale on subsequent cycles.
+   - P3: auto-defer immediately with carry-forward note.
+4. **Council findings** — auto-fix P1/P2 findings, defer P3. This overrides the "present council findings to user" CHECK constraint.
+5. **Multi-phase loop** — see "Autopilot Phase Loop" section for full behavior (phase selection, hard stops, summary report).
+
 ## Core Concepts
 
 7-step loop per phase: **IDEAS → BRD → RESEARCH → SPEC → PLAN → BUILD → CHECK/CLOSE**
@@ -81,7 +121,7 @@ Each agent receives: phase context (number, title, tags, brief, brief_file if se
 
 **Open question protocol** (applies to Steps 1-3): If an agent reports open questions, in autopilot mode proceed with the recommended option and record the question + chosen answer — pass all to the spec-writer (Step 4) for ADR entries in SPEC.md. Otherwise, present via `AskUserQuestion` (see format below) and re-spawn agent with answers.
 
-**Mode initialization (REQUIRED before auto/autopilot execution):** When the user requests `auto` or `autopilot` mode, you MUST run `pw.sh set-mode` BEFORE executing any steps. For single phase: `set-mode --phase N --mode <mode>`. For autopilot range: `set-mode --from N [--to M] --mode autopilot`. Verify the mode was set by checking the command output. Never rely on phases already having the correct mode — always set it explicitly.
+**Mode initialization**: Before running steps in auto or autopilot mode, run `pw.sh set-mode` first. For single phase: `set-mode --phase N --mode <mode>`. For autopilot range: `set-mode --from N [--to M] --mode autopilot`. Always set mode explicitly rather than relying on existing mode values — pw.py gates depend on the mode being current.
 
 #### Step 1: IDEAS
 
@@ -239,12 +279,12 @@ This step stays with the orchestrator — it is coordination work (dispatching e
 
 **CHECK constraints:**
 
-- Do NOT close with any P1 issues unresolved
-- Do NOT skip the alignment checker agent
-- Do NOT mark tests as passing without running them
-- Do NOT skip dispatching a council expert because its domain seems irrelevant — let the expert decide
-- Do NOT include code snippets in merged council findings
-- Do NOT auto-fix council findings without user review (exception: autopilot mode auto-fixes P1/P2 findings, defers P3)
+- Resolve all P1 issues before closing
+- Always run the alignment checker agent
+- Run tests and record actual pass/fail results as evidence
+- Dispatch every active council expert — let the expert determine relevance
+- Use plain English in merged council findings (no code snippets)
+- Present council findings to the user for review before fixing (autopilot mode: auto-fix P1/P2, defer P3)
 
 ### Autopilot Phase Loop
 
@@ -315,31 +355,6 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh <command>
 
 ---
 
-## Mode Rules, Gates, and Operating Rules
-
-### Auto Mode Rules
-
-1. **Step ordering is strict** — same 7-step sequence, no skipping
-2. **Hard gate policy** — each step must be complete + committed before the next begins
-3. **Sub-agent delegation** — every step is handled by a dedicated agent; the orchestrator only validates and gates
-4. **Stop condition** — approval gates always fire even in auto mode. Unresolved open questions with no good default also stop. After gate approval, resume auto mode execution from the next step without requiring a separate "continue" command.
-5. **Default-by-best-practice** — proceed + log as ADR in SPEC.md
-6. **Anti-drift lock** — before build step, only edit phase artifacts
-7. **Pre-build** — pw.py auto-checks dependencies when starting build (no manual call needed)
-
-### Autopilot Mode Rules
-
-Autopilot mode inherits all auto mode rules (strict step ordering, step-completion gates, sub-agent delegation, anti-drift lock, pre-build dependency check) with these overrides:
-
-1. **Approval gates skipped** — both `before_build` and `before_close` gates are skipped entirely. Log: "Autopilot: skipping BUILD/CLOSE approval gate for phase N."
-2. **Open questions auto-resolved** — do not call `AskUserQuestion`. Always proceed with the recommended (first) option. Record each auto-resolved question and chosen answer. Pass all to the spec-writer (Step 4) for inclusion as ADR entries in SPEC.md.
-3. **Fix cycle auto-policy**:
-   - P1: auto-fix (up to 3 cycles). If still unresolved after 3 cycles → **hard stop autopilot**, report to user.
-   - P2: auto-fix on first pass, defer with rationale on subsequent cycles.
-   - P3: auto-defer immediately with carry-forward note.
-4. **Council findings** — auto-fix P1/P2 findings, defer P3. This overrides the "Do NOT auto-fix council findings without user review" constraint.
-5. **Multi-phase loop** — see "Autopilot Phase Loop" section for full behavior (phase selection, hard stops, summary report).
-
 ### Concurrent Phase Work
 
 You can plan ahead while building. Dependency checks are step-aware:
@@ -391,23 +406,6 @@ When a step agent reports open questions, the orchestrator presents them via the
 - `multiSelect`: `true` when choices are not mutually exclusive
 
 Record user responses and re-spawn the agent with answers if needed. In auto mode: proceed with recommended option only if high confidence + low impact; otherwise call `AskUserQuestion`.
-
-### Agent Spawning Protocol
-
-Config fields (`config.*`) are **auto-injected** via the `SubagentStart` hook — do not embed config in spawn prompts.
-
-When spawning any sub-agent, pass only:
-
-1. **Phase context**: number, title, tags, brief, brief_file (if set), phase directory path
-2. **File paths**: input artifact paths (not content), output path, template path
-3. **Refs paths**: if the phase has refs
-
-Never pass file content inline — agents read files themselves. Never read source code or artifact content yourself — that's the agent's job.
-
-### Operating Rules
-
-- Commit discipline: atomic commits after completed steps (orchestrator commits, not agents)
-- If scope changes mid-phase, update all impacted docs in order (BRD → SPEC → PLAN)
 
 ### Definition of Done
 

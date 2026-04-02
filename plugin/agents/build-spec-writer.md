@@ -62,6 +62,6 @@ Signal completion: `[build-spec-writer] COMPLETE ✓ — saved to {phase-dir}/SP
 
 ## Constraints
 
-- Do NOT create T-nnn entries without linking to a specific FC.
-- Do NOT omit error handling specifications.
+- Every T-nnn entry must link to a specific FC — tests without traceability to a functional capability are not actionable.
+- Include error handling specifications for each component — define expected behavior for invalid input, timeouts, and failure modes.
 - Do NOT commit. The orchestrator handles commits.

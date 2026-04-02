@@ -37,20 +37,16 @@ These are non-negotiable constraints:
 
 ## Mandatory Verification
 
-Every task MUST end with these checks:
+Run the project verification commands after every task:
 
 ```bash
-# 1. Build — MUST pass with zero errors
-npm run build  # or project-specific build command
-
-# 2. Type check — zero errors, no any types
-npm run typecheck  # or: tsc --noEmit
-
-# 3. Lint — all errors fixed
-npm run lint
+# Run the verify commands from config.commands.verify (injected via pew.yaml)
+# Example for Node.js: npm run build && npm run typecheck && npm run lint
+# Example for Go: go build ./... && go vet ./... && golangci-lint run
+# Example for Python: mypy . && ruff check .
 ```
 
-If any check fails, fix the issue before reporting task completion. The task is NOT complete until all checks pass.
+If `config.commands.verify` is available in your context, run those exact commands. If any check fails, fix the issue before reporting task completion. The task is not complete until all checks pass.
 
 ## Quality Checklist
 

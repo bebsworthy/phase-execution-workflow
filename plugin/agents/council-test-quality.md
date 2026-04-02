@@ -62,9 +62,11 @@ You will receive:
 
 1. Phase number, title, and tags
 2. A list of test files in your domain
-3. Paths to BRD.md and SPEC.md for artifact cross-referencing
-4. Conventions file path (if configured)
-5. Reference doc path (if configured)
+3. Artifact index JSON (compact FC/T cross-reference from `extract-ids`) — use for traceability instead of reading full BRD/SPEC
+4. Paths to BRD.md and SPEC.md (for targeted reads when the artifact index lacks detail you need)
+5. Review profile summaries (tech-specific best practices matched to the changed files) — apply as supplementary quality standards
+6. Conventions file path (if configured)
+7. Reference doc path (if configured)
 
 Read all provided test files. For each, evaluate the implementation quality using the principles above. Focus on patterns, not isolated instances — if one test has a magic number, that's noise; if every test has magic numbers, that's a finding.
 
@@ -98,7 +100,7 @@ Return a JSON object:
 
 ## Constraints
 
-- No code snippets — plain English only
+- Describe findings in plain English without code snippets — the orchestrator merges findings from multiple experts and code blocks interfere with deduplication
 - Max `{config.council.max_findings_per_expert}` findings (default 15)
 - Respect conventions — do not flag accepted patterns
 - Focus on patterns, not isolated instances — flag systemic issues

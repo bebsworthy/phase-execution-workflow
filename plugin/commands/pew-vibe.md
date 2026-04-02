@@ -54,8 +54,8 @@ Before creating a new phase, check if one is already in progress:
 For each user instruction:
 
 1. **Implement** the change:
-   - For small changes: implement directly
-   - For larger changes: spawn `build-frontend-developer` or `build-backend-developer` with the instruction as task description
+   - Changes touching 3 or fewer existing files with no new test files: implement directly
+   - Changes touching 4+ files or requiring new test files: spawn `build-frontend-developer` or `build-backend-developer` with the instruction as task description
    - Run verification after each change: `{config.commands.verify}` (lint, typecheck, test)
 
 2. **Record** the decision in `{phase-dir}/DECISIONS.md`:
@@ -92,7 +92,7 @@ Repeat until the user says "close" or "done" or "finish vibe phase".
 Run the exact same CHECK/CLOSE flow as pew-build (Step 7 from `skills/pew-build/SKILL.md`):
 
 1. **7a — Council Review**: dispatch experts in parallel, collect findings, merge/dedup
-2. **7b — Verify**: run verify commands, spawn alignment checker, optionally product reviewer
+2. **7b — Quality check**: alignment checker, optionally product reviewer (verify runs automatically on close via pw.py)
 3. **7c — Fix**: fix cycles (P1 → P2 → P3), max 3 cycles
 4. **7d — Close**: approval gate, finalize, close phase
 

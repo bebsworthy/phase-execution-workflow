@@ -49,8 +49,8 @@ Signal completion: `[build-plan-writer] COMPLETE ✓ — saved to {phase-dir}/PL
 
 ## Constraints
 
-- Do NOT create tasks without acceptance criteria.
-- Do NOT sequence tasks without considering dependency order.
-- Do NOT include tasks that cannot be verified independently.
-- Do NOT create tracks with circular cross-track dependencies.
+- Every task needs acceptance criteria that can be verified after implementation.
+- Order tasks by their dependency chain — a task's inputs must be produced by earlier tasks.
+- Each task should be independently verifiable. If it cannot be checked on its own, merge it with a related task.
+- Tracks must form a DAG — if two tracks depend on each other, merge them or restructure.
 - Do NOT commit. The orchestrator handles commits.
