@@ -1,7 +1,7 @@
 {
   "name": "pew-react-audit",
   "description": "Comprehensive code quality audit with 8 specialist agents across 4 phases \u2014 TypeScript patterns, security, duplication, complexity, debt, synthesis, and remediation roadmap.",
-  "version": "4.0.15",
+  "version": "4.0.16",
   "author": {
     "name": "Boyd Stratton"
   },
