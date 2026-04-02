@@ -16,7 +16,7 @@ Read ALL files in `style/{project_name}/`:
 - `03-reference-profile.md` — reference design tokens and components
 - `04-correspondence.md` — component mapping, token delta, conflicts
 - `05-hierarchy.md` — hierarchy proposal, design system definition
-- `06-migration-plan.md` — phased migration roadmap
+- `06-migration-plan.md` — tiered migration roadmap
 
 ## Output Structure
 
@@ -29,7 +29,7 @@ Write `style/{project_name}/report.md` with exactly these 7 sections:
 - What reference was used (source type, tool, description)
 - Key findings (hierarchy grade, token gap size, conflict count)
 - Overall migration complexity (simple/moderate/complex/major) with rationale
-- Recommended approach (e.g., "token-first migration over 5 phases")
+- Recommended approach (e.g., "token-first migration across 5 tiers")
 
 Plus a stats box:
 
@@ -44,7 +44,7 @@ Plus a stats box:
 | Structural conflicts | {count} (all resolved) |
 | Current hierarchy grade | {grade} |
 | Projected hierarchy grade | {grade} |
-| Estimated migration phases | 5 |
+| Migration tiers | 5 |
 ```
 
 ### Section 2: App Design Profile (Condensed)
@@ -98,11 +98,11 @@ Link to `05-hierarchy.md` for the complete mapping tables.
 ### Section 7: Migration Roadmap
 
 From `06-migration-plan.md`:
-- Phase overview table:
+- Tier overview table:
 
 ```markdown
-| Phase | Focus | Components | Effort | Risk |
-|-------|-------|------------|--------|------|
+| Tier | Focus | Components | Effort | Risk |
+|------|-------|------------|--------|------|
 | 1 | Design Tokens | — | L1-L2 | Low |
 | 2 | Atomic Components | {count} | L2-L3 | Medium |
 | 3 | Composite Components | {count} | L2-L4 | Medium-High |
@@ -110,18 +110,18 @@ From `06-migration-plan.md`:
 | 5 | Polish & Consistency | — | L1-L2 | Low |
 ```
 
-- Per-phase: 2-3 sentence summary of what changes and why
+- Per-tier: 2-3 sentence summary of what changes and why
 - Automation opportunities summary: "{X} changes automatable, {Y} require manual work"
 - Top 5 risks from the risk register
-- Recommended testing approach per phase (1 line each)
+- Recommended testing approach per tier (1 line each)
 
 ### Cross-Reference Validation
 
 Before writing the report, verify:
 - Every component in the correspondence map (Section 4) appears in the hierarchy proposal (Section 6)
-- Every token change in the delta (Section 5) maps to a specific migration phase (Section 7)
+- Every token change in the delta (Section 5) maps to a specific migration tier (Section 7)
 - Every conflict in Section 4 has a resolution
-- The hierarchy's "create new" components appear in the migration plan's Phase 2 or 3
+- The hierarchy's "create new" components appear in the migration plan's Tier 2 or 3
 
 Note any gaps found as a "Report Integrity Notes" subsection at the end.
 

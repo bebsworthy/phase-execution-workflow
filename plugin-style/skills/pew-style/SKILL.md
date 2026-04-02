@@ -11,9 +11,9 @@ user-invocable: true
 
 ## Purpose
 
-This framework powers a multi-phase analysis of a web application's design language against a target reference (screenshots, exported source code, or both). It produces a comprehensive migration plan that maps current tokens and components to their target equivalents, proposes a semantic component hierarchy, and delivers a phased transformation roadmap.
+This framework powers a multi-phase analysis of a web application's design language against a target reference (screenshots, exported source code, or both). It produces a comprehensive migration plan that maps current tokens and components to their target equivalents, proposes a semantic component hierarchy, and delivers a tiered transformation roadmap.
 
-The plugin does NOT execute changes. Its output feeds into pew-build phases for implementation.
+The plugin does NOT execute changes. Its output feeds into a pew-build phase for implementation.
 
 ## Tone & Approach
 
@@ -479,7 +479,7 @@ style/{project_name}/
   03-reference-profile.md     # Reference design profile (same template)
   04-correspondence.md        # Semantic matching & token delta
   05-hierarchy.md             # Component hierarchy proposal & design system definition
-  06-migration-plan.md        # Phased migration roadmap
+  06-migration-plan.md        # Tiered migration roadmap
   report.md                   # Synthesized final report
   .meta.json                  # Run metadata (timestamps, input hashes, re-run detection)
 ```

@@ -1,6 +1,6 @@
 ---
 name: pew-style
-description: Analyze a web application's design language against a target reference and produce a phased migration plan with component hierarchy proposals
+description: Analyze a web application's design language against a target reference and produce a tiered migration plan with component hierarchy proposals
 allowed-tools: Agent, Read, Write, Bash, Glob, Grep, AskUserQuestion
 ---
 
@@ -176,7 +176,7 @@ Output: `Phase 4/5 — Designing component hierarchy and migration roadmap...`
 > Propose a restructured semantic component hierarchy for the application. Read `style/{project_name}/01-intake.json`, `style/{project_name}/02-app-profile.md`, `style/{project_name}/03-reference-profile.md`, and `style/{project_name}/04-correspondence.md`. Grade the current hierarchy quality (A-F). Identify anti-patterns (div soup, inline overrides, duplicated style logic). Propose semantic names for all components using the standard role categories from the pew-style skill. Map each current component to its proposed semantic name and target visual style. Propose a design system definition (token file structure, component API contracts, naming conventions). Save to `style/{project_name}/05-hierarchy.md`.
 
 **Agent 2 — `style-migration-planner`:**
-> Produce a phased migration roadmap for transforming the app's design toward the reference. Read `style/{project_name}/01-intake.json`, `style/{project_name}/02-app-profile.md`, `style/{project_name}/03-reference-profile.md`, and `style/{project_name}/04-correspondence.md`. Organize the migration into 5 phases: (1) Tokens, (2) Atomic Components, (3) Composite Components, (4) Page Layouts, (5) Polish. For each phase: list affected files, effort level (L1-L5), risk assessment, and rollback strategy. Identify find-and-replace-safe changes vs manual refactoring. Flag high-risk items (components used in 10+ places). Save to `style/{project_name}/06-migration-plan.md`.
+> Produce a phased migration roadmap for transforming the app's design toward the reference. Read `style/{project_name}/01-intake.json`, `style/{project_name}/02-app-profile.md`, `style/{project_name}/03-reference-profile.md`, and `style/{project_name}/04-correspondence.md`. Organize the migration into 5 tiers: (1) Tokens, (2) Atomic Components, (3) Composite Components, (4) Page Layouts, (5) Polish. For each tier: list affected files, effort level (L1-L5), risk assessment, and rollback strategy. Identify find-and-replace-safe changes vs manual refactoring. Flag high-risk items (components used in 10+ places). Save to `style/{project_name}/06-migration-plan.md`.
 
 **Wait for BOTH to complete.** Validate `05-hierarchy.md` and `06-migration-plan.md` exist and are non-empty.
 
@@ -188,7 +188,7 @@ Output: `Phase 5/5 — Synthesizing final report...`
 
 ### Spawn `style-synthesizer`
 
-> Merge all design analysis into a final report. Read all files in `style/{project_name}/`: `01-intake.json`, `02-app-profile.md`, `03-reference-profile.md`, `04-correspondence.md`, `05-hierarchy.md`, and `06-migration-plan.md`. Produce a report with 7 sections: (1) Executive Summary, (2) App Design Profile (condensed), (3) Reference Design Profile (condensed), (4) Component Correspondence Map, (5) Design Token Delta, (6) Component Hierarchy Proposal, (7) Migration Roadmap. Cross-reference hierarchy proposals with migration phases. Ensure every token change maps to a specific migration phase. Save to `style/{project_name}/report.md`.
+> Merge all design analysis into a final report. Read all files in `style/{project_name}/`: `01-intake.json`, `02-app-profile.md`, `03-reference-profile.md`, `04-correspondence.md`, `05-hierarchy.md`, and `06-migration-plan.md`. Produce a report with 7 sections: (1) Executive Summary, (2) App Design Profile (condensed), (3) Reference Design Profile (condensed), (4) Component Correspondence Map, (5) Design Token Delta, (6) Component Hierarchy Proposal, (7) Migration Roadmap. Cross-reference hierarchy proposals with migration tiers. Ensure every token change maps to a specific migration tier. Save to `style/{project_name}/report.md`.
 
 **Wait for completion.** Validate `report.md` exists and contains all 7 required sections.
 
@@ -234,7 +234,7 @@ style/{project_name}/
   "question": "Design migration analysis complete. What would you like to do next?",
   "header": "Next steps",
   "options": [
-    {"label": "Create pew-build phases", "description": "Convert the migration plan into PEW delivery phases for implementation"},
+    {"label": "Create pew-build phase", "description": "Create a single PEW delivery phase for the migration (tiers become ordered tasks)"},
     {"label": "Export design tokens", "description": "Extract proposed tokens as CSS custom properties / Tailwind config / JSON"},
     {"label": "Analyze another reference", "description": "Run again with a different target design"},
     {"label": "Done", "description": "End the analysis"}
@@ -242,7 +242,7 @@ style/{project_name}/
 }
 ```
 
-- **"Create pew-build phases"**: Use the audit-to-phases pattern — read `06-migration-plan.md`, create one PEW phase per migration tier. Each phase references the relevant analysis files.
+- **"Create pew-build phase"**: Read `06-migration-plan.md`. Create a **single** PEW phase (size: `large`, tags: `frontend, style-migration`) with `style/{project_name}/report.md` as `brief_file` and the analysis files as `refs`. The 5 migration tiers become ordered task groups within the phase's PLAN — not separate phases. If the user explicitly asks to split into multiple phases, create one phase per tier instead.
 - **"Export design tokens"**: Read `04-correspondence.md` token delta and `05-hierarchy.md` token definitions. Write token files in the format matching the app's styling approach (CSS custom properties for CSS vars, `tailwind.config` additions for Tailwind, theme object for styled-components).
 - **"Analyze another reference"**: Ask for new reference path, update `style.yaml`, loop back to Step 0.
 - **"Done"**: End.
