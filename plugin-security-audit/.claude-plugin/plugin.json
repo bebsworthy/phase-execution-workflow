@@ -1,7 +1,7 @@
 {
   "name": "pew-security-audit",
-  "description": "Comprehensive application security audit with 10 specialist agents across 5 phases — code security, secrets, supply chain, server/API, frontend, infrastructure, synthesis, and remediation.",
-  "version": "4.0.17",
+  "description": "Comprehensive application security audit with 10 specialist agents across 5 phases \u2014 code security, secrets, supply chain, server/API, frontend, infrastructure, synthesis, and remediation.",
+  "version": "4.0.18",
   "author": {
     "name": "Boyd Stratton"
   },
