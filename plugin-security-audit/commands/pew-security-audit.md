@@ -180,10 +180,10 @@ If `pw.sh validate-config` shows no pew.yaml, skip this step — tell the user t
 
 ## Critical Rules
 
-- **Never start Phase 3+ before Phase 2 has fully completed** (all active agents).
+- Wait for all Phase 2 agents to signal completion before starting Phase 3 (Phase 3 reads all Phase 2 outputs).
 - If an agent's output is missing required sections, re-prompt that specific agent to fill the gap before proceeding.
 - The `{output_dir}/` directory must contain all expected files when done (inventory + active domain files + synthesis + remediation + playbook + report).
-- If an agent fails, report the failure and ask the user how to proceed — do not skip phases.
-- Phase 2 agents MUST run in parallel (single message with N Agent calls) to minimize total audit time.
-- **Conditional activation is mandatory**: Read the inventory before spawning Phase 2 agents. Never spawn agents for inactive domains.
+- If an agent fails, report which agent failed and why, then ask the user how to proceed.
+- Spawn all Phase 2 agents in parallel (single message with N Agent calls) to minimize total audit time.
+- Read the inventory before spawning Phase 2 agents. Spawning agents for inactive domains wastes context budget and can produce false findings when the domain has no relevant files.
 - When passing sub-project lists to agents, include the sub-project ID and path, not the full inventory JSON.

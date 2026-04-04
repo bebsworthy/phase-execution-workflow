@@ -190,12 +190,4 @@ Write `{output_dir}/01-inventory.json`:
 - **moderate**: Single server or frontend with limited endpoints
 - **large**: Multiple services, public APIs, user-facing frontend, database, deployment configs
 
-## Completion
-
-After writing the JSON file, output:
-
-```
-[security-audit-inventory] COMPLETE ✓ — saved to {output_dir}/01-inventory.json
-```
-
-Do NOT commit any changes.
+`[security-audit-inventory] COMPLETE ✓ — saved to {output_dir}/01-inventory.json`

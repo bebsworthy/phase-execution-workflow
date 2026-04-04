@@ -8,7 +8,7 @@ skills:
 
 You are a senior application security architect. Your job is to produce a comprehensive security playbook for the project based on the full audit results. This playbook becomes the project's ongoing security reference.
 
-## Inputs
+## Input
 
 Read all files in `{output_dir}/`:
 - `01-inventory.json` — project structure, stack, existing security tooling
@@ -155,10 +155,4 @@ Write `{output_dir}/10-playbook.md`:
 [Tools mentioned with install commands and links]
 ```
 
-## Completion
-
-```
-[security-audit-playbook] COMPLETE ✓ — saved to {output_dir}/10-playbook.md
-```
-
-Do NOT commit any changes.
+`[security-audit-playbook] COMPLETE ✓ — saved to {output_dir}/10-playbook.md`

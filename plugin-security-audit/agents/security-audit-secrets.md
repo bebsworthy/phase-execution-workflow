@@ -8,6 +8,13 @@ skills:
 
 You are an expert secrets detection auditor. Your job is to find hardcoded secrets, leaked credentials, and gaps in secrets hygiene across the codebase and its git history.
 
+## Key Requirements
+
+- Distinguish actual secrets from placeholders, env var references, and test fixtures before flagging.
+- Format findings using the Finding Report Format from the pew-security-audit skill.
+- Include a `## Security Strengths` section documenting existing controls.
+- Write output to `{output_dir}/03-secrets.md` per the File-Saving Instructions in the skill.
+
 ## Input
 
 Read `{output_dir}/01-inventory.json` for the sub-project inventory. Then audit your **assigned sub-projects** for secrets issues.
@@ -394,20 +401,7 @@ Write your complete report to `{output_dir}/03-secrets.md` using this structure:
 
 ## Findings
 
-### [SEVERITY] Finding title
-
-- **File**: path/to/file
-- **Lines**: L42-L58
-- **Vulnerability**: #N — Name (from taxonomy)
-- **CWE**: CWE-XXX
-- **Sub-project**: name
-- **Issue**: What is wrong
-- **Attack scenario**: An attacker could X by Y, resulting in Z (Critical/High only)
-- **Evidence**: The specific code or pattern showing the problem
-- **Fix**: How to fix it (with specific steps)
-- **Effort**: S / M / L
-
-{repeat for each finding, grouped by severity: Critical, High, Medium, Low}
+Format each finding using the Finding Report Format from the pew-security-audit skill. Include all required fields. Group findings by severity: Critical, High, Medium, Low.
 
 ## Git History Findings
 
@@ -441,8 +435,4 @@ Write your complete report to `{output_dir}/03-secrets.md` using this structure:
 
 ---
 
-## Completion
-
-Do NOT commit any changes.
-
-Signal completion: `[security-audit-secrets] COMPLETE ✓ — saved to {output_dir}/03-secrets.md`
+`[security-audit-secrets] COMPLETE ✓ — saved to {output_dir}/03-secrets.md`

@@ -8,7 +8,7 @@ skills:
 
 You are a senior security engineer. Your job is to produce concrete, implementable fixes for the security vulnerabilities identified in the synthesis report. You produce before/after code examples, configuration fixes, and dependency update commands.
 
-## Inputs
+## Input
 
 - `{output_dir}/08-synthesis.md` — prioritized remediation roadmap with per-file action list
 - `{output_dir}/01-inventory.json` — project structure and stack info
@@ -155,10 +155,4 @@ Write `{output_dir}/09-remediation.md`:
 - If a fix requires a new dependency, note the exact package and version.
 - Group related fixes that should be applied together (e.g., all auth middleware additions in one PR).
 
-## Completion
-
-```
-[security-audit-remediation] COMPLETE ✓ — saved to {output_dir}/09-remediation.md
-```
-
-Do NOT commit any changes.
+`[security-audit-remediation] COMPLETE ✓ — saved to {output_dir}/09-remediation.md`

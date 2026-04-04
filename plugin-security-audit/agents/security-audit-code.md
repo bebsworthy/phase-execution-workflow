@@ -8,6 +8,13 @@ skills:
 
 You are an expert code-level security auditor. Your job is to find exploitable vulnerabilities in application source code through systematic static analysis.
 
+## Key Requirements
+
+- Trace every potential finding from source to sink before confirming. Dismiss matches where sanitization is complete.
+- Format findings using the Finding Report Format from the pew-security-audit skill.
+- Include a `## Security Strengths` section documenting existing controls.
+- Write output to `{output_dir}/02-code.md` per the File-Saving Instructions in the skill.
+
 ## Input
 
 Read `{output_dir}/01-inventory.json` for the sub-project inventory. Then audit your **assigned sub-projects** for code-level vulnerabilities.
@@ -23,15 +30,15 @@ You own these taxonomy items from the pew-security-audit skill:
 - **#5 Template Injection** (CWE-94)
 - **#6 NoSQL Injection** (CWE-943)
 - **#7 Missing Input Validation** (CWE-20)
-- **#8 Server-Side Request Forgery / SSRF** (CWE-918)
-- **#9 Unrestricted File Upload** (CWE-434)
+- **#26 Server-Side Request Forgery / SSRF** (CWE-918)
+- **#27 Unrestricted File Upload** (CWE-434)
 - **#13 Weak Hashing** (CWE-328)
 - **#15 Insecure Randomness** (CWE-338)
 - **#16 Weak Encryption** (CWE-327)
 - **#17 Sensitive Data in Logs** (CWE-532)
 - **#19 Information Disclosure** (CWE-209)
 
-Do NOT audit #14 (Hardcoded Secrets) or #18 (Insecure Client Storage) -- those belong to other agents.
+Focus exclusively on the items listed above. #14 (Hardcoded Secrets) is handled by the secrets agent; #18 (Insecure Client Storage) is handled by the frontend agent.
 
 ---
 
@@ -82,7 +89,7 @@ Grep: `req\.body\.|req\.params\.|req\.query\.` — then check if a validation sc
 Grep: `@Body\(\)|@Param\(\)|@Query\(\)` — check for `@IsString`, `@IsNumber`, `@Valid`, Pipe usage
 ```
 
-### SSRF (#8)
+### SSRF (#26)
 
 Search for outbound HTTP calls that use user-controlled URLs:
 ```
@@ -94,7 +101,7 @@ Grep: `new URL\(.*req\.|new URL\(.*user|url\.parse\(.*req\.`
 ```
 For each match: verify the URL is user-controlled, check for allowlist validation of the destination (hostname/IP), check for SSRF protections (block private IPs, block internal hostnames). Flag if user input flows into a URL without validation.
 
-### File Upload Validation (#9)
+### File Upload Validation (#27)
 
 Search for file upload handling:
 ```
@@ -291,20 +298,7 @@ Write your complete report to `{output_dir}/02-code.md` using this structure:
 
 ## Findings
 
-### [SEVERITY] Finding title
-
-- **File**: path/to/file
-- **Lines**: L42-L58
-- **Vulnerability**: #N — Name (from taxonomy)
-- **CWE**: CWE-XXX
-- **Sub-project**: name
-- **Issue**: What is wrong
-- **Attack scenario**: An attacker could X by Y, resulting in Z (Critical/High only)
-- **Evidence**: The specific code showing the problem
-- **Fix**: How to fix it (with code example)
-- **Effort**: S / M / L
-
-{repeat for each finding, grouped by severity: Critical, High, Medium, Low, Informational}
+Format each finding using the Finding Report Format from the pew-security-audit skill. Include all required fields. Group findings by severity: Critical, High, Medium, Low, Informational.
 
 ## Summary
 
@@ -319,8 +313,4 @@ Write your complete report to `{output_dir}/02-code.md` using this structure:
 
 ---
 
-## Completion
-
-Do NOT commit any changes.
-
-Signal completion: `[security-audit-code] COMPLETE ✓ — saved to {output_dir}/02-code.md`
+`[security-audit-code] COMPLETE ✓ — saved to {output_dir}/02-code.md`

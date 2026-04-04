@@ -81,6 +81,13 @@ Every finding must answer: "How could an attacker exploit this, and what would b
 | 24 | Secrets in Build Layers | Secrets in Dockerfile ARG/ENV/COPY; secrets in docker-compose env | CWE-798 | Use Docker BuildKit secrets; use Docker/Compose secrets mounts |
 | 25 | Database Misconfiguration | Default credentials; trust auth in pg_hba.conf; exposed ports; no SSL | CWE-1188 | Use scram-sha-256; restrict pg_hba.conf; bind to internal network; enforce SSL |
 
+### G. Additional Vulnerability Classes
+
+| # | Vulnerability | Detection Signal | CWE | Fix |
+|---|--------------|-----------------|-----|-----|
+| 26 | Server-Side Request Forgery (SSRF) | User input in outbound HTTP URLs without allowlist | CWE-918 | Validate URLs against domain allowlist; block private IP ranges |
+| 27 | Unrestricted File Upload | File uploads without content-type validation, size limits, or filename sanitization | CWE-434 | Validate content by magic bytes; enforce size limits; randomize filenames |
+
 ---
 
 ## Severity Scale
@@ -91,6 +98,9 @@ Every finding must answer: "How could an attacker exploit this, and what would b
 | **High** | Exploitable vulnerability requiring some preconditions | Attacker needs authenticated access or specific conditions | Fix this sprint |
 | **Medium** | Defense-in-depth gap that increases attack surface | Exploitable only in combination with another vulnerability | Fix next sprint |
 | **Low** | Best-practice violation that does not directly enable an attack | No direct exploit path | Fix when convenient |
+| **Informational** | Observation or recommendation that is not a vulnerability | No exploit path; defensive suggestion | Address at discretion |
+
+**Tiebreaker**: When uncertain between two adjacent severities, apply the higher severity if an unauthenticated external attacker can reach the issue with publicly available information.
 
 **Attack Scenario Requirement**: Every Critical and High finding MUST include an attack scenario in this format:
 
@@ -191,6 +201,8 @@ When reviewing code (human or AI-generated) for security:
 
 ## File-Saving Instructions
 
-1. Write your complete output to your designated file under `{output_dir}/`.
+1. Write your complete output to your designated file under `{output_dir}/`. The `{output_dir}` path is provided in your spawn prompt. If it is not set, default to `phases/audit/security`.
 2. Do not write to any other agent's file.
-3. Signal completion with: `[security-audit-<name>] COMPLETE ✓ — saved to {output_dir}/<filename>`
+3. Do NOT commit any changes. Save files but leave git commits to the orchestrator.
+4. If you find zero vulnerabilities, still write the full output structure with an empty Findings section noting "No vulnerabilities detected in this domain."
+5. Signal completion with: `[security-audit-<name>] COMPLETE ✓ — saved to {output_dir}/<filename>`
