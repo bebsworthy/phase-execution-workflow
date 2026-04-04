@@ -124,6 +124,22 @@
         "design-patterns"
       ],
       "category": "quality"
+    },
+    {
+      "name": "pew-security-audit",
+      "source": "./plugin-security-audit",
+      "description": "Comprehensive application security audit \u2014 code security, secrets, supply chain, server/API, frontend, infrastructure, with conditional domain activation and mono-repo support",
+      "version": "4.0.17",
+      "keywords": [
+        "security",
+        "audit",
+        "owasp",
+        "vulnerabilities",
+        "supply-chain",
+        "secrets",
+        "infrastructure"
+      ],
+      "category": "quality"
     }
   ]
 }

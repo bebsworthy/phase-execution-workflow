@@ -1,6 +1,6 @@
 ---
 name: pew-audit-to-phases
-description: Convert audit report findings into actionable PEW phases. Works with react-audit, test-audit, and ux-audit reports.
+description: Convert audit report findings into actionable PEW phases. Works with react-audit, test-audit, ux-audit, and security-audit reports.
 allowed-tools: Agent, Read, Write, Bash, Glob
 ---
 
@@ -8,21 +8,22 @@ allowed-tools: Agent, Read, Write, Bash, Glob
 
 You convert audit report findings into PEW phases. This command works standalone (after an audit was run earlier) or is called automatically at the end of an audit.
 
-**Note**: The audit plugins (pew-react-audit, pew-test-audit, pew-ux-audit) are separate plugins. They must be installed and run before this command can find their output. Output paths come from `pew.yaml` (`paths.audit_test`, `paths.audit_ux`, `paths.audit_react`).
+**Note**: The audit plugins (pew-react-audit, pew-test-audit, pew-ux-audit, pew-security-audit) are separate plugins. They must be installed and run before this command can find their output. Output paths come from `pew.yaml` (`paths.audit_test`, `paths.audit_ux`, `paths.audit_react`, `paths.audit_security`).
 
 ## Step 1 — Detect Audit Type and Report
 
 Check for existing audit reports:
 
 1. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh validate-config` — if no pew.yaml, tell the user to run `/pew-init` first.
-2. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config` to get `config.paths.audit_test`, `config.paths.audit_ux`, and `config.paths.audit_react`.
+2. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/pw.sh dump-config` to get `config.paths.audit_test`, `config.paths.audit_ux`, `config.paths.audit_react`, and `config.paths.audit_security`.
 3. Check which reports exist:
    - `{config.paths.audit_test}/08-synthesis.md` → test audit available
    - `{config.paths.audit_ux}/05-proposals.md` → UX audit available
    - `{config.paths.audit_react}/07-synthesis.md` → react audit available
+   - `{config.paths.audit_security}/08-synthesis.md` → security audit available
 4. If multiple exist, ask the user which audit to convert (or all).
-5. If none exists, tell the user to run `/pew-test-audit`, `/pew-ux-audit`, or `/pew-react-audit` first.
-6. If `$ARGUMENTS` specifies an audit type (`test`, `ux`, or `react`), use that directly.
+5. If none exists, tell the user to run `/pew-test-audit`, `/pew-ux-audit`, `/pew-react-audit`, or `/pew-security-audit` first.
+6. If `$ARGUMENTS` specifies an audit type (`test`, `ux`, `react`, or `security`), use that directly.
 
 ## Step 2 — Read the Remediation Roadmap
 
@@ -34,6 +35,9 @@ Read `{config.paths.audit_ux}/05-proposals.md` — extract the improvement propo
 
 ### For code audits:
 Read `{config.paths.audit_react}/07-synthesis.md` — extract the tiered remediation roadmap (Tiers 1-4) and file-level heat map. Also read `{config.paths.audit_react}/08-roadmap.md` for concrete before/after fixes and refactoring strategies.
+
+### For security audits:
+Read `{config.paths.audit_security}/08-synthesis.md` — extract the tiered remediation roadmap (Tiers 1-4), security posture score, vulnerability heat map, and attack chain analysis. Also read `{config.paths.audit_security}/09-remediation.md` for concrete before/after fixes and CI/CD hardening recommendations.
 
 ## Step 3 — Determine Phase Numbering and Scheduling
 
@@ -91,6 +95,16 @@ Group by improvement level and impact:
 
 Tier 4 (Ongoing) is NOT a phase -- it's conventions/CI config. Mention it as a recommendation but don't create a phase.
 
+### Security audit → phases mapping:
+
+| Tier | Suggested Phase | Refs |
+|------|----------------|------|
+| Tier 1 (Immediate) | "Fix Critical Security Vulnerabilities" — hardcoded secrets, injection flaws, missing auth, critical CVEs | 08-synthesis.md, 09-remediation.md, 01-inventory.json, 02-code.md, 03-secrets.md |
+| Tier 2 (Short Term) | "Harden Security Controls" — input validation, CSRF protection, crypto improvements, secure storage | 08-synthesis.md, 09-remediation.md, 05-server.md, 06-frontend.md |
+| Tier 3 (Medium Term) | "Security Architecture Improvements" — CSP, rate limiting, Docker hardening, security logging, infrastructure | 08-synthesis.md, 09-remediation.md, 07-infrastructure.md, 10-playbook.md |
+
+Tier 4 (Ongoing) is NOT a phase — it's CI/CD gates, SAST, pre-commit hooks. Include in playbook but don't create a phase. For security audits, use tags `security` on the generated phases.
+
 All audit-derived phases use `--size audit`. Skip phases with no findings. Combine small tiers if they have fewer than 3 items total.
 
 ### Step 4b — Generate AUDIT-BRIEF.md per phase
@@ -139,6 +153,17 @@ Group by category (security, patterns, duplication, complexity, debt) and list a
 - **Files**: file paths + line ranges from the audit detail files
 - **Issue**: what's wrong (from audit)
 - **Before/After**: code examples from 08-roadmap.md
+
+### For security audits:
+Group by vulnerability taxonomy category (A-F) and list affected files:
+
+### #N — <Vulnerability Name> (CWE-XXX)
+- **Severity**: [critical|high|medium|low]
+- **Sub-project**: (if mono-repo)
+- **Files**: file paths + line ranges from audit detail files
+- **Attack scenario**: how an attacker could exploit this (from 08-synthesis.md)
+- **Issue**: what's wrong (from audit)
+- **Before/After**: code examples from 09-remediation.md
 
 ## Acceptance Criteria
 
@@ -202,5 +227,6 @@ Run `/pew-build` and say `start phase N` to begin.
 - Skip tiers with no findings -- don't create empty phases.
 - Tier 4 / ongoing items become conventions or CI config recommendations, not phases.
 - For code audits, use tags `code-quality` on the generated phases.
+- For security audits, use tags `security` on the generated phases.
 - If pew.yaml doesn't exist, tell the user to run `/pew-init` first — don't create phases without a configured project.
 - Refs must point to the detailed audit files, not just the report.
